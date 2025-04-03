@@ -1,46 +1,62 @@
-# Getting Started with Create React App
+# Hệ thống quản lý ra vào
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Ứng dụng web sử dụng ReactJS để quản lý việc ra vào cho một khu vực.
 
-## Available Scripts
+## Tính năng
 
-In the project directory, you can run:
+- Đăng nhập/Đăng xuất
+- Quản lý người dùng (thêm, sửa, xóa, xem chi tiết)
+- Quản lý thiết bị (cửa) (thêm, sửa, xóa)
+- Lập lịch và phân quyền ra vào
 
-### `npm start`
+## Hướng dẫn cài đặt
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+1. Clone repository
+2. Cài đặt các dependencies:
+   ```
+   npm install
+   ```
+3. Chạy dự án:
+   ```
+   npm start
+   ```
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+## Cách sử dụng
 
-### `npm test`
+### Đăng nhập
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+- Sử dụng thông tin đăng nhập mặc định:
+  - Tên đăng nhập: admin
+  - Mật khẩu: admin123
 
-### `npm run build`
+### Quản lý người dùng
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+- Xem danh sách người dùng
+- Thêm người dùng mới
+- Chỉnh sửa thông tin người dùng
+- Xóa người dùng
+- Xem chi tiết người dùng
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### Quản lý thiết bị
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+- Xem danh sách thiết bị
+- Thêm thiết bị mới
+- Chỉnh sửa thông tin thiết bị
+- Xóa thiết bị
 
-### `npm run eject`
+### Lập lịch và phân quyền
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+- Phân quyền người dùng với thiết bị
+- Xem lịch sử phân quyền
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+## Công nghệ sử dụng
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+- ReactJS
+- TypeScript
+- Material-UI
+- React Router
+- Context API
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+## Lưu ý
 
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
+Đây là phiên bản demo với dữ liệu mẫu. Trong môi trường thực tế, cần tích hợp với API backend.
