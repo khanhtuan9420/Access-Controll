@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: access-management-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./src:/app/src
+    environment:
+      - NODE_ENV=production
+      - CHOKIDAR_USEPOLLING=true
+
+  # Phần này có thể bổ sung sau nếu cần backend hoặc database
+  # backend:
+  #   image: node:16-alpine
+  #   container_name: access-management-api
+  #   restart: unless-stopped
+  #   ports:
+  #     - "5000:5000"
+  #   volumes:
+  #     - ./api:/app
+  #   working_dir: /app
+  #   command: npm start
+  
+  # db:
+  #   image: mongo:latest
+  #   container_name: access-management-db
+  #   restart: unless-stopped
+  #   ports:
+  #     - "27017:27017"
+  #   volumes:
+  #     - mongodb_data:/data/db
+
+# volumes:
+#   mongodb_data: 

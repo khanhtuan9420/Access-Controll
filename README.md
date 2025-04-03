@@ -60,3 +60,28 @@
 ## Lưu ý
 
 Đây là phiên bản demo với dữ liệu mẫu. Trong môi trường thực tế, cần tích hợp với API backend.
+
+## Triển khai với Docker
+
+Dự án này có thể được triển khai dễ dàng sử dụng Docker. Có hai môi trường được cấu hình:
+
+### Môi trường phát triển (Development)
+
+Môi trường phát triển sử dụng `Dockerfile.dev` và `docker-compose.dev.yml`, giúp triển khai nhanh chóng với tính năng hot-reload:
+
+```bash
+# Xây dựng và chạy ứng dụng trong môi trường phát triển
+docker-compose -f docker-compose.dev.yml up --build
+```
+
+### Môi trường sản phẩm (Production)
+
+Môi trường sản phẩm sử dụng `Dockerfile` và `docker-compose.yml` chuẩn:
+
+```bash
+# Xây dựng và chạy ứng dụng trong môi trường sản phẩm
+docker-compose up --build
+```
+
+Sau khi ứng dụng được khởi động, bạn có thể truy cập:
+- Ứng dụng web: http://localhost:3000
