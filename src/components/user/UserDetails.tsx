@@ -13,6 +13,9 @@ import {
   ListItemText,
   Divider,
   Paper,
+  Card,
+  CardMedia,
+  CardContent,
 } from '@mui/material';
 import { User } from '../../types';
 
@@ -26,6 +29,9 @@ const UserDetails: React.FC<UserDetailsProps> = ({ open, onClose, user }) => {
   if (!user) {
     return null;
   }
+
+  // Default image for fingerprint if not available
+  const defaultFingerprint = "https://img.freepik.com/premium-vector/fingerprint-icon-fingerprint-symbol-identity-sensor-id-biometric-authorization-system_97458-240.jpg";
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
@@ -45,6 +51,39 @@ const UserDetails: React.FC<UserDetailsProps> = ({ open, onClose, user }) => {
           <Typography variant="subtitle1" color="text.secondary">
             {user.username}
           </Typography>
+        </Box>
+
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 3, mb: 3 }}>
+          <Box sx={{ flex: 1 }}>
+            <Card>
+              <CardMedia
+                component="img"
+                height="200"
+                image={user.faceImage || "https://via.placeholder.com/200?text=No+Face+Image"}
+                alt="Ảnh khuôn mặt"
+              />
+              <CardContent>
+                <Typography variant="h6" component="div">
+                  Ảnh khuôn mặt
+                </Typography>
+              </CardContent>
+            </Card>
+          </Box>
+          <Box sx={{ flex: 1 }}>
+            <Card>
+              <CardMedia
+                component="img"
+                height="200"
+                image={user.fingerPrint || defaultFingerprint}
+                alt="Vân tay"
+              />
+              <CardContent>
+                <Typography variant="h6" component="div">
+                  Ảnh vân tay
+                </Typography>
+              </CardContent>
+            </Card>
+          </Box>
         </Box>
 
         <Paper sx={{ p: 2 }}>

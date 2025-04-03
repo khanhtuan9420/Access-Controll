@@ -14,7 +14,7 @@ export const users: User[] = [
     name: 'John Doe',
     idNumber: 'ID001',
     faceImage: 'https://randomuser.me/api/portraits/men/1.jpg',
-    fingerPrint: 'fingerprint_data_1',
+    fingerPrint: 'https://cdn-icons-png.flaticon.com/512/823/823472.png',
   },
   {
     id: '2',
@@ -22,7 +22,7 @@ export const users: User[] = [
     name: 'Jane Smith',
     idNumber: 'ID002',
     faceImage: 'https://randomuser.me/api/portraits/women/2.jpg',
-    fingerPrint: 'fingerprint_data_2',
+    fingerPrint: 'https://cdn-icons-png.flaticon.com/512/823/823472.png',
   },
   {
     id: '3',
@@ -30,7 +30,7 @@ export const users: User[] = [
     name: 'Michael Brown',
     idNumber: 'ID003',
     faceImage: 'https://randomuser.me/api/portraits/men/3.jpg',
-    fingerPrint: 'fingerprint_data_3',
+    fingerPrint: 'https://cdn-icons-png.flaticon.com/512/823/823472.png',
   },
   {
     id: '4',
@@ -38,7 +38,7 @@ export const users: User[] = [
     name: 'Emily Johnson',
     idNumber: 'ID004',
     faceImage: 'https://randomuser.me/api/portraits/women/4.jpg',
-    fingerPrint: 'fingerprint_data_4',
+    fingerPrint: 'https://cdn-icons-png.flaticon.com/512/823/823472.png',
   },
   {
     id: '5',
@@ -46,7 +46,7 @@ export const users: User[] = [
     name: 'David Wilson',
     idNumber: 'ID005',
     faceImage: 'https://randomuser.me/api/portraits/men/5.jpg',
-    fingerPrint: 'fingerprint_data_5',
+    fingerPrint: 'https://cdn-icons-png.flaticon.com/512/823/823472.png',
   },
 ];
 
