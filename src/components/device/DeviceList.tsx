@@ -43,7 +43,7 @@ const DeviceList: React.FC = () => {
   const fetchDevices = async () => {
     setLoading(true);
     try {
-      const data = await deviceService.getDevices();
+      const data = await deviceService.getDevices(rowsPerPage, page);
       setDevices(data);
     } catch (error) {
       console.error('Error fetching devices:', error);
