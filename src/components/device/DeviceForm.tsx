@@ -29,7 +29,6 @@ type DeviceInput = Omit<Device, 'id'>;
 const DeviceForm: React.FC<DeviceFormProps> = ({ open, onClose, onSubmit, device, isEditing }) => {
   const [formData, setFormData] = useState<DeviceInput>({
     name: '',
-    position: '',
     type: '',
     location: '',
     status: 'active',
@@ -39,7 +38,6 @@ const DeviceForm: React.FC<DeviceFormProps> = ({ open, onClose, onSubmit, device
     if (device && isEditing) {
       setFormData({
         name: device.name,
-        position: device.position,
         type: device.type || '',
         location: device.location || '',
         status: device.status || 'active',
@@ -48,7 +46,6 @@ const DeviceForm: React.FC<DeviceFormProps> = ({ open, onClose, onSubmit, device
       // Reset the form when adding a new device
       setFormData({
         name: '',
-        position: '',
         type: '',
         location: '',
         status: 'active',
@@ -92,16 +89,6 @@ const DeviceForm: React.FC<DeviceFormProps> = ({ open, onClose, onSubmit, device
               name="name"
               autoFocus
               value={formData.name}
-              onChange={handleTextFieldChange}
-            />
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              id="position"
-              label="Vị trí sử dụng"
-              name="position"
-              value={formData.position}
               onChange={handleTextFieldChange}
             />
             <TextField

@@ -13,7 +13,6 @@ export interface User {
 export interface Device {
   id: string;
   name: string;
-  position: string;
   type: string;
   location: string;
   status: string;

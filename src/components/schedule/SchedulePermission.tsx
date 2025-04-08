@@ -288,7 +288,7 @@ const SchedulePermission: React.FC = () => {
                 >
                   {devices.map((device) => (
                     <MenuItem key={device.id} value={device.id}>
-                      {device.name} ({device.position})
+                      {device.name} ({device.location})
                     </MenuItem>
                   ))}
                 </Select>

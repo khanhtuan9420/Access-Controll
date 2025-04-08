@@ -50,50 +50,6 @@ export const users: User[] = [
   },
 ];
 
-// Mock Devices
-export const devices: Device[] = [
-  {
-    id: '1',
-    name: 'Main Entrance',
-    position: 'Front Building',
-    type: 'Fingerprint Scanner',
-    location: 'Lobby Floor 1',
-    status: 'active'
-  },
-  {
-    id: '2',
-    name: 'Server Room',
-    position: 'IT Department',
-    type: 'Face Recognition',
-    location: 'Basement Floor',
-    status: 'active'
-  },
-  {
-    id: '3',
-    name: 'Executive Office',
-    position: 'Top Floor',
-    type: 'Dual Authentication',
-    location: 'Floor 10',
-    status: 'active'
-  },
-  {
-    id: '4',
-    name: 'R&D Lab',
-    position: 'Research Wing',
-    type: 'Fingerprint Scanner',
-    location: 'Floor 5',
-    status: 'maintenance'
-  },
-  {
-    id: '5',
-    name: 'Storage Room',
-    position: 'Warehouse',
-    type: 'Card Reader',
-    location: 'Basement Floor 2',
-    status: 'inactive'
-  },
-];
-
 // Mock Permissions
 export const permissions: Permission[] = [
   {

@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { User, Device, Schedule, Permission, LoginCredentials } from '../types';
-import { users, devices, schedules, permissions, credentials } from '../mocks/data';
+import { users, schedules, permissions, credentials } from '../mocks/data';
 import { v4 as uuidv4 } from 'uuid';
 
 // Delay function to simulate API calls
@@ -144,7 +144,7 @@ export const deviceService = {
   getDevices: async (pageSize: number = 10, page: number = 0) => {
     const token = getToken();
     
-    const url_devices = `${THINGSBOARD_HOST}/api/tenant/devices`; // API lấy danh sách thiết bị
+    const url_devices = `${THINGSBOARD_HOST}/api/tenant/deviceInfos`; // API lấy danh sách thiết bị
     
     try {
       const response = await axios.get(url_devices, {
@@ -154,29 +154,57 @@ export const deviceService = {
         },
         params: { pageSize, page }, 
       });
+      
+      const deviceList = response.data.data;
 
-      // Ánh xạ dữ liệu từ API thành định dạng phù hợp với Device
-      const devices: Device[] = response.data.data.map((device: any) => ({
-        id: device.id.id, // Lấy id thiết bị từ đối tượng id
-        name: device.name, // Lấy tên thiết bị
-        position: "Unknown", // Cung cấp thông tin vị trí nếu có, nếu không có thể gán mặc định
-        type: device.type, // Lấy loại thiết bị
-        location: "Unknown", // Cung cấp thông tin vị trí nếu có
-        status: "Active", // Trạng thái có thể là "Active" hoặc một giá trị khác
-      }));
+          // Lấy telemetry location cho từng thiết bị
+      const devicesWithTelemetry: Device[] = await Promise.all(
+        deviceList.map(async (device: any) => {
+          const telemetryUrl = `${THINGSBOARD_HOST}/api/plugins/telemetry/DEVICE/${device.id.id}/values/timeseries?keys=location`;
 
-      return devices;
+          try {
+            const telemetryRes = await axios.get(telemetryUrl, {
+              headers: {
+                "Content-Type": "application/json",
+                "X-Authorization": `Bearer ${token}`,
+              },
+            });
+
+            const location = telemetryRes.data.location?.[0]?.value || "Unknown";
+
+            return {
+              id: device.id.id,
+              name: device.name,
+              type: device.type,
+              location,
+              status: device.active ? "Active" : "Inactive",
+            };
+          } catch (telemetryError) {
+            // Trường hợp không lấy được telemetry, fallback lại giá trị mặc định
+            return {
+              id: device.id.id,
+              name: device.name,
+              type: device.type,
+              location: "Unknown",
+              status: device.active ? "Active" : "Inactive",
+            };
+          }
+        })
+      );
+
+      return devicesWithTelemetry;
     } catch (error: any) {
       throw new Error(error.response?.data?.message || "Lỗi không xác định khi lấy danh sách thiết bị");
     }
   },
   
-  getDeviceById: async (id: string): Promise<Device | undefined> => {
-    await delay(300);
-    return devices.find(device => device.id === id);
-  },
+  // getDeviceById: async (id: string): Promise<Device | undefined> => {
+  //   await delay(300);
+  //   return devices.find(device:Device => device.id === id);
+  // },
   
   createDevice: async (deviceData: Omit<Device, 'id'>): Promise<Device> => {
+
 
     const token = getToken();
 
@@ -193,7 +221,6 @@ export const deviceService = {
       const newDevice: Device = {
         id: response.data.id.id,
         name: response.data.name,
-        position: deviceData.position || "Unknown",
         type: deviceData.type,
         location: deviceData.location || "Unknown",
         status: "Active", // Trạng thái mặc định là "Active", có thể thay đổi tùy theo dữ liệu trả về
@@ -229,7 +256,6 @@ export const deviceService = {
           entityType: "DEVICE"
         },
         name: deviceData.name,
-        position: deviceData.position || "Unknown",
         type: deviceData.type,
         location: deviceData.location || "Unknown",
         status: "Active",  
@@ -246,7 +272,6 @@ export const deviceService = {
       const updatedDevice: Device = {
         id: response.data.id.id,
         name: response.data.name,
-        position: deviceData.position || response.data.additionalInfo?.position || "Unknown",
         type: deviceData.type || response.data.type,
         location: deviceData.location || response.data.additionalInfo?.location || "Unknown",
         status: "Active",  // Có thể thay đổi tùy vào logic bạn sử dụng
