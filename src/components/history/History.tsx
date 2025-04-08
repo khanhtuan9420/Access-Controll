@@ -63,7 +63,7 @@ const History: React.FC = () => {
   }, []);
 
   const handleFilter = async () => {
-    const data = await historyService.getHistory({
+    const data: HistoryEntry[] = await historyService.getHistories({
       selectedUsers,
       selectedDevices,
       startTime,
