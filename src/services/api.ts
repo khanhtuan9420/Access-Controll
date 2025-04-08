@@ -371,3 +371,16 @@ export const permissionService = {
     permissions.splice(index, 1);
   },
 }; 
+
+export const historyService = {
+  getHistory: async (data : any) => {
+    try {
+      const url = ''
+      const loginResponse = await axios.post(url, data);
+      return loginResponse.data;
+    } catch (error: any) {
+      console.error(error);
+    }
+  },
+};
+
