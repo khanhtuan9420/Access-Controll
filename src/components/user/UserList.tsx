@@ -25,6 +25,7 @@ import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import VisibilityIcon from '@mui/icons-material/Visibility';
+import RefreshIcon from '@mui/icons-material/Refresh';
 import { User } from '../../types';
 import { userService } from '../../services/api';
 import UserForm from '../../components/user/UserForm';
@@ -142,6 +143,18 @@ const UserList: React.FC = () => {
     }
   };
 
+  const handleReload = async () => {
+    setLoading(true);
+    try {
+      const data = await userService.getUsers();
+      setUsers(data);
+    } catch (error) {
+      console.error('Error reloading users:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Pagination logic
   const emptyRows = page > 0 ? Math.max(0, (1 + page) * rowsPerPage - users.length) : 0;
   const paginatedUsers = users.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
@@ -152,13 +165,22 @@ const UserList: React.FC = () => {
         <Typography variant="h4" component="h1">
           Quản lý người dùng
         </Typography>
-        <Fab
-          color="primary"
-          aria-label="add"
-          onClick={() => handleOpenForm(false, null)}
-        >
-          <AddIcon />
-        </Fab>
+        <Box>
+          <IconButton 
+            color="primary" 
+            onClick={handleReload}
+            sx={{ mr: 1 }}
+          >
+            <RefreshIcon />
+          </IconButton>
+          <Fab
+            color="primary"
+            aria-label="add"
+            onClick={() => handleOpenForm(false, null)}
+          >
+            <AddIcon />
+          </Fab>
+        </Box>
       </Box>
 
       {loading ? (

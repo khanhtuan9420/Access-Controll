@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Box,
   Typography,
@@ -35,6 +35,8 @@ import viLocale from 'date-fns/locale/vi';
 import { User, Device, Permission } from '../../types';
 import { userService, deviceService, permissionService } from '../../services/api';
 import DeleteIcon from '@mui/icons-material/Delete';
+import RefreshIcon from '@mui/icons-material/Refresh';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
@@ -62,6 +64,9 @@ const SchedulePermission: React.FC = () => {
   const [openForm, setOpenForm] = useState(false);
   const [openDeleteConfirm, setOpenDeleteConfirm] = useState(false);
   const [currentPermission, setCurrentPermission] = useState<Permission | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Pagination
   const [page, setPage] = useState(0);
@@ -216,6 +221,58 @@ const SchedulePermission: React.FC = () => {
     });
   };
 
+  const handleReload = async () => {
+    setLoading(true);
+    try {
+      const [usersData, devicesData, permissionsData] = await Promise.all([
+        userService.getUsers(),
+        deviceService.getDevices(),
+        permissionService.getPermissions(),
+      ]);
+      
+      setUsers(usersData);
+      setDevices(devicesData);
+      setPermissions(permissionsData);
+    } catch (error) {
+      console.error('Error reloading data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files[0]) {
+      setSelectedFile(event.target.files[0]);
+    }
+  };
+
+  const handleUpload = async () => {
+    if (!selectedFile) return;
+
+    setUploading(true);
+    try {
+      // Tạo FormData để gửi file
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+
+      // Gọi API upload file
+      await permissionService.uploadPermissions(formData);
+      
+      // Reset file đã chọn
+      setSelectedFile(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+
+      // Reload dữ liệu
+      await handleReload();
+    } catch (error) {
+      console.error('Error uploading file:', error);
+    } finally {
+      setUploading(false);
+    }
+  };
+
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
@@ -231,9 +288,50 @@ const SchedulePermission: React.FC = () => {
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={viLocale}>
       <Box>
-        <Typography variant="h4" component="h1" gutterBottom>
-          Lập lịch & Phân quyền
-        </Typography>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+          <Typography variant="h4" component="h1">
+            Lập lịch & Phân quyền
+          </Typography>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <input
+                type="file"
+                accept=".xlsx,.xls"
+                onChange={handleFileChange}
+                ref={fileInputRef}
+                style={{ display: 'none' }}
+              />
+              <Button
+                variant="outlined"
+                startIcon={<CloudUploadIcon />}
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+              >
+                Chọn file
+              </Button>
+              {selectedFile && (
+                <Typography variant="body2" sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {selectedFile.name}
+                </Typography>
+              )}
+              {selectedFile && (
+                <Button
+                  variant="contained"
+                  onClick={handleUpload}
+                  disabled={uploading}
+                >
+                  {uploading ? <CircularProgress size={24} /> : 'Upload'}
+                </Button>
+              )}
+            </Box>
+            <IconButton 
+              color="primary" 
+              onClick={handleReload}
+            >
+              <RefreshIcon />
+            </IconButton>
+          </Box>
+        </Box>
 
         <Paper sx={{ p: 3, mb: 4 }}>
           <Typography variant="h6" gutterBottom>

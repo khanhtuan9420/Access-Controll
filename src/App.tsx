@@ -6,6 +6,7 @@ import LoginPage from './components/auth/LoginPage';
 import UserList from './components/user/UserList';
 import DeviceList from './components/device/DeviceList';
 import SchedulePermission from './components/schedule/SchedulePermission';
+import History from './components/history/History';
 import MainLayout from './components/layout/MainLayout';
 import ProtectedRoute from './components/layout/ProtectedRoute';
 
@@ -38,6 +39,7 @@ const App: React.FC = () => {
                 <Route path="/users" element={<UserList />} />
                 <Route path="/devices" element={<DeviceList />} />
                 <Route path="/schedules" element={<SchedulePermission />} />
+                <Route path="/history" element={<History />} />
               </Route>
             </Route>
             

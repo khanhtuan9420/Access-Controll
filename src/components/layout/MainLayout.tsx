@@ -20,6 +20,7 @@ import MenuIcon from '@mui/icons-material/Menu';
 import PeopleIcon from '@mui/icons-material/People';
 import MeetingRoomIcon from '@mui/icons-material/MeetingRoom';
 import ScheduleIcon from '@mui/icons-material/Schedule';
+import HistoryIcon from '@mui/icons-material/History';
 import LogoutIcon from '@mui/icons-material/Logout';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -29,6 +30,7 @@ const menuItems = [
   { text: 'Quản lý người dùng', icon: <PeopleIcon />, path: '/users' },
   { text: 'Quản lý thiết bị', icon: <MeetingRoomIcon />, path: '/devices' },
   { text: 'Lập lịch & Phân quyền', icon: <ScheduleIcon />, path: '/schedules' },
+  { text: 'Lịch sử', icon: <HistoryIcon />, path: '/history' },
 ];
 
 const MainLayout: React.FC = () => {

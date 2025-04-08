@@ -202,6 +202,31 @@ export const deviceService = {
   //   await delay(300);
   //   return devices.find(device:Device => device.id === id);
   // },
+  getDeviceProfiles: async () => {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      throw new Error("Chưa đăng nhập hoặc token không tồn tại");
+    }
+    
+    const url = `${THINGSBOARD_HOST}/api/device-profiles`;
+    
+    try {
+      const response = await axios.get(url, {
+        headers: {
+          "Content-Type": "application/json",
+          "X-Authorization": `Bearer ${token}`,
+        },
+      });
+
+      return response.data.data.map((profile: any) => ({
+        id: profile.id.id,
+        name: profile.name
+      }));
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || "Lỗi không xác định khi lấy danh sách device profile");
+    }
+  },
   
   createDevice: async (deviceData: Omit<Device, 'id'>): Promise<Device> => {
 
@@ -340,26 +365,26 @@ export const permissionService = {
     };
     permissions.push(newPermission);
     return newPermission;
-    // const token = getToken("token");
   
-    // const url = `${THINGSBOARD_HOST}/api/permissions`; // URL API tạo quyền
-  
+  },
+
+  uploadPermissions: async (formData: FormData): Promise<void> => {
+    await delay(300);
+    // TODO: Implement actual API call
+    // const token = localStorage.getItem("token");
+    // if (!token) {
+    //   throw new Error("Chưa đăng nhập hoặc token không tồn tại");
+    // }
+    // const url = `${THINGSBOARD_HOST}/api/permissions/upload`;
     // try {
-    //   const response = await axios.post(url, {
-    //     userIds,
-    //     deviceIds,
-    //     startTime,
-    //     endTime,
-    //   }, {
+    //   await axios.post(url, formData, {
     //     headers: {
-    //       "Content-Type": "application/json",
+    //       "Content-Type": "multipart/form-data",
     //       "X-Authorization": `Bearer ${token}`,
     //     },
     //   });
-  
-    //   return response.data; // Trả về dữ liệu của quyền vừa tạo
     // } catch (error: any) {
-    //   throw new Error(error.response?.data?.message || "Lỗi không xác định khi tạo quyền");
+    //   throw new Error(error.response?.data?.message || "Lỗi không xác định khi upload file");
     // }
   },
 
