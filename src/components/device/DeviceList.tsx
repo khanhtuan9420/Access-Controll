@@ -24,6 +24,7 @@ import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import VisibilityIcon from '@mui/icons-material/Visibility';
+import RefreshIcon from '@mui/icons-material/Refresh';
 import { Device } from '../../types';
 import { deviceService } from '../../services/api';
 import DeviceForm from '../../components/device/DeviceForm';
@@ -128,6 +129,18 @@ const DeviceList: React.FC = () => {
     }
   };
 
+  const handleReload = async () => {
+    setLoading(true);
+    try {
+      const data = await deviceService.getDevices();
+      setDevices(data);
+    } catch (error) {
+      console.error('Error reloading devices:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Pagination logic
   const emptyRows = page > 0 ? Math.max(0, (1 + page) * rowsPerPage - devices.length) : 0;
   const paginatedDevices = devices.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
@@ -138,13 +151,22 @@ const DeviceList: React.FC = () => {
         <Typography variant="h4" component="h1">
           Quản lý thiết bị
         </Typography>
-        <Fab
-          color="primary"
-          aria-label="add"
-          onClick={() => handleOpenForm(false, null)}
-        >
-          <AddIcon />
-        </Fab>
+        <Box>
+          <IconButton 
+            color="primary" 
+            onClick={handleReload}
+            sx={{ mr: 1 }}
+          >
+            <RefreshIcon />
+          </IconButton>
+          <Fab
+            color="primary"
+            aria-label="add"
+            onClick={() => handleOpenForm(false, null)}
+          >
+            <AddIcon />
+          </Fab>
+        </Box>
       </Box>
 
       {loading ? (

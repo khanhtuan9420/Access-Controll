@@ -35,6 +35,7 @@ import viLocale from 'date-fns/locale/vi';
 import { User, Device, Permission } from '../../types';
 import { userService, deviceService, permissionService } from '../../services/api';
 import DeleteIcon from '@mui/icons-material/Delete';
+import RefreshIcon from '@mui/icons-material/Refresh';
 
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
@@ -216,6 +217,25 @@ const SchedulePermission: React.FC = () => {
     });
   };
 
+  const handleReload = async () => {
+    setLoading(true);
+    try {
+      const [usersData, devicesData, permissionsData] = await Promise.all([
+        userService.getUsers(),
+        deviceService.getDevices(),
+        permissionService.getPermissions(),
+      ]);
+      
+      setUsers(usersData);
+      setDevices(devicesData);
+      setPermissions(permissionsData);
+    } catch (error) {
+      console.error('Error reloading data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
@@ -231,9 +251,17 @@ const SchedulePermission: React.FC = () => {
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={viLocale}>
       <Box>
-        <Typography variant="h4" component="h1" gutterBottom>
-          Lập lịch & Phân quyền
-        </Typography>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+          <Typography variant="h4" component="h1">
+            Lập lịch & Phân quyền
+          </Typography>
+          <IconButton 
+            color="primary" 
+            onClick={handleReload}
+          >
+            <RefreshIcon />
+          </IconButton>
+        </Box>
 
         <Paper sx={{ p: 3, mb: 4 }}>
           <Typography variant="h6" gutterBottom>
