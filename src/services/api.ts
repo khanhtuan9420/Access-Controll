@@ -7,6 +7,16 @@ import { v4 as uuidv4 } from 'uuid';
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 const THINGSBOARD_HOST = "http://18.142.251.211:8080"; 
 
+
+const getToken = () => {
+  const token = sessionStorage.getItem("token");
+
+  if (!token) {
+    throw new Error("Chưa đăng nhập hoặc token không tồn tại");
+  }
+  return token;
+}
+
 // Auth service
 export const authService = {
   login: async (loginData: LoginCredentials) => {
@@ -24,8 +34,8 @@ export const authService = {
       });
       
       let token = loginResponse.data.token;
-      // Lưu token vào localStorage
-      localStorage.setItem("token", token);
+      // Lưu token vào sessionStorage
+      sessionStorage.setItem("token", loginResponse.data.token || "");
       
       const userResponse = await axios.get(url_user_info, {
         headers: {
@@ -33,12 +43,14 @@ export const authService = {
           "X-Authorization": `Bearer ${token}`,
         },
       });
+
+      let fullName = userResponse.data.firstName + " " + userResponse.data.lastName;
       
       return {
         user: {
           id: userResponse.data.id.id,
           username: userResponse.data.name,
-          name: userResponse.data.firstName + " " + userResponse.data.lastName,
+          name: fullName === " " ? fullName : userResponse.data.name,
           idNumber: userResponse.data.idNumber || "UNKNOWN",
         },
         token: token,
@@ -63,10 +75,8 @@ export const userService = {
 
   // getUsers: async (pageSize: number, page: number) => {
 
-  //   const token = localStorage.getItem("token");
-  //   if (!token) {
-  //     throw new Error("Chưa đăng nhập hoặc token không tồn tại");
-  //   }
+  //   const token = getToken();
+
   //   const url_users = `${THINGSBOARD_HOST}/api/users`; // API lấy danh sách người dùng
     
   //   try {
@@ -132,11 +142,7 @@ export const deviceService = {
   // },
 
   getDevices: async (pageSize: number = 10, page: number = 0) => {
-    const token = localStorage.getItem("token");
-
-    if (!token) {
-      throw new Error("Chưa đăng nhập hoặc token không tồn tại");
-    }
+    const token = getToken();
     
     const url_devices = `${THINGSBOARD_HOST}/api/tenant/devices`; // API lấy danh sách thiết bị
     
@@ -171,19 +177,8 @@ export const deviceService = {
   },
   
   createDevice: async (deviceData: Omit<Device, 'id'>): Promise<Device> => {
-    // await delay(300);
-    // const newDevice: Device = {
-    //   id: uuidv4(),
-    //   ...deviceData,
-    // };
-    // devices.push(newDevice);
-    // return newDevice;
 
-    const token = localStorage.getItem("token");
-
-    if (!token) {
-      throw new Error("Chưa đăng nhập hoặc token không tồn tại");
-    }
+    const token = getToken();
 
     const url = `${THINGSBOARD_HOST}/api/device`;
 
@@ -213,22 +208,9 @@ export const deviceService = {
   },
   
   updateDevice: async (id: string, deviceData: Partial<Device>): Promise<Device> => {
-    // await delay(300);
-    // const index = devices.findIndex(device => device.id === id);
-    // if (index === -1) {
-    //   throw new Error('Device not found');
-    // }
-    // const updatedDevice = { ...devices[index], ...deviceData };
-    // devices[index] = updatedDevice;
-    // return updatedDevice;
 
-    const token = localStorage.getItem("token");
-
-    if (!token) {
-      throw new Error("Chưa đăng nhập hoặc token không tồn tại");
-    }
+    const token = getToken();
     const url_credential = `${THINGSBOARD_HOST}/api/device/${id}/credentials`;
-
 
     try {
       const response_access_token = await axios.get(url_credential, {
@@ -238,12 +220,23 @@ export const deviceService = {
         },
       });
 
-      console.log(response_access_token)
-
       let access_token = response_access_token.data.credentialsId;
       const url_update = `${THINGSBOARD_HOST}/api/device?accessToken=${access_token}`;
 
-      const response = await axios.post(url_update, deviceData, {
+      let data = {
+        id: {
+          id: id,
+          entityType: "DEVICE"
+        },
+        name: deviceData.name,
+        position: deviceData.position || "Unknown",
+        type: deviceData.type,
+        location: deviceData.location || "Unknown",
+        status: "Active",  
+
+      }
+
+      const response = await axios.post(url_update, data, {
         headers: {
           "Content-Type": "application/json",
           "X-Authorization": `Bearer ${token}`,
@@ -266,20 +259,8 @@ export const deviceService = {
   },
   
   deleteDevice: async (id: string): Promise<void> => {
-  //   await delay(300);
-  //   const index = devices.findIndex(device => device.id === id);
-  //   if (index === -1) {
-  //     throw new Error('Device not found');
-  //   }
-  //   devices.splice(index, 1);
-  // },
 
-  const token = localStorage.getItem("token");
-
-    if (!token) {
-      throw new Error("Chưa đăng nhập hoặc token không tồn tại");
-    }
-
+    const token = getToken();
     const url = `${THINGSBOARD_HOST}/api/device/${id}`;
 
     try {
@@ -300,7 +281,7 @@ export const permissionService = {
   getPermissions: async (): Promise<Permission[]> => {
     await delay(300);
     return [...permissions];
-    // const token = localStorage.getItem("token");
+    // const token = getToken("token");
   
     // if (!token) {
     //   throw new Error("Chưa đăng nhập hoặc token không tồn tại");
@@ -334,11 +315,7 @@ export const permissionService = {
     };
     permissions.push(newPermission);
     return newPermission;
-    // const token = localStorage.getItem("token");
-  
-    // if (!token) {
-    //   throw new Error("Chưa đăng nhập hoặc token không tồn tại");
-    // }
+    // const token = getToken("token");
   
     // const url = `${THINGSBOARD_HOST}/api/permissions`; // URL API tạo quyền
   
@@ -368,11 +345,7 @@ export const permissionService = {
       throw new Error('Permission not found');
     }
     permissions.splice(index, 1);
-  //   const token = localStorage.getItem("token");
-  
-  //   if (!token) {
-  //     throw new Error("Chưa đăng nhập hoặc token không tồn tại");
-  //   }
+  //   const token = getToken("token");
   
   //   const url = `${THINGSBOARD_HOST}/api/permissions/${id}`; // URL API xóa quyền
   
