@@ -24,7 +24,7 @@ import { LocalizationProvider, DateTimePicker } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import viLocale from 'date-fns/locale/vi';
 import { User, Device, HistoryEntry } from '../../types';
-import { userService, deviceService } from '../../services/api';
+import { userService, deviceService, historyService } from '../../services/api';
 import { historyEntries } from '../../mocks/data';
 
 const History: React.FC = () => {
@@ -62,31 +62,15 @@ const History: React.FC = () => {
     fetchData();
   }, []);
 
-  const handleFilter = () => {
-    let filtered = [...historyEntries];
+  const handleFilter = async () => {
+    const data = await historyService.getHistory({
+      selectedUsers,
+      selectedDevices,
+      startTime,
+      endTime
+    })
 
-    // Lọc theo người dùng
-    if (selectedUsers.length > 0) {
-      filtered = filtered.filter(entry => selectedUsers.includes(entry.userId));
-    }
-
-    // Lọc theo thiết bị
-    if (selectedDevices.length > 0) {
-      filtered = filtered.filter(entry => selectedDevices.includes(entry.deviceId));
-    }
-
-    // Lọc theo thời gian
-    if (startTime) {
-      filtered = filtered.filter(entry => new Date(entry.timestamp) >= startTime);
-    }
-    if (endTime) {
-      filtered = filtered.filter(entry => new Date(entry.timestamp) <= endTime);
-    }
-
-    // Sắp xếp theo thời gian giảm dần
-    filtered.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-
-    setFilteredHistory(filtered);
+    setFilteredHistory(data);
     setPage(0);
   };
 

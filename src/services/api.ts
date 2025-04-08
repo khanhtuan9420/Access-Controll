@@ -403,3 +403,16 @@ export const permissionService = {
   //   }
   },
 }; 
+
+export const historyService = {
+  getHistory: async (data : any) => {
+    try {
+      const url = ''
+      const loginResponse = await axios.post(url, data);
+      return loginResponse.data;
+    } catch (error: any) {
+      console.error(error);
+    }
+  },
+};
+
