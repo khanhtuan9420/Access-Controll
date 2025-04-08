@@ -12,28 +12,48 @@ import {
   MenuItem,
   Box,
   Stack,
+  CircularProgress
 } from '@mui/material';
 import { SelectChangeEvent } from '@mui/material/Select';
 import { Device } from '../../types';
+import { deviceService } from '../../services/api';
+
+interface DeviceProfile {
+  id: string;
+  name: string;
+}
 
 interface DeviceFormProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (id: string | null, data: Omit<Device, 'id'>) => void;
+  onSubmit: (id: string | null, deviceData: any) => void;
   device: Device | null;
   isEditing: boolean;
 }
 
-type DeviceInput = Omit<Device, 'id'>;
-
 const DeviceForm: React.FC<DeviceFormProps> = ({ open, onClose, onSubmit, device, isEditing }) => {
-  const [formData, setFormData] = useState<DeviceInput>({
+  const [formData, setFormData] = useState({
     name: '',
-    position: '',
     type: '',
+    position: '',
     location: '',
     status: 'active',
   });
+  const [deviceProfiles, setDeviceProfiles] = useState<DeviceProfile[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchDeviceProfiles = async () => {
+      try {
+        const profiles = await deviceService.getDeviceProfiles();
+        setDeviceProfiles(profiles);
+      } catch (error) {
+        console.error('Error fetching device profiles:', error);
+      }
+    };
+
+    fetchDeviceProfiles();
+  }, []);
 
   useEffect(() => {
     if (device && isEditing) {
@@ -94,6 +114,21 @@ const DeviceForm: React.FC<DeviceFormProps> = ({ open, onClose, onSubmit, device
               value={formData.name}
               onChange={handleTextFieldChange}
             />
+            <FormControl fullWidth margin="normal">
+              <InputLabel id="device-type-label">Loại thiết bị</InputLabel>
+              <Select
+                labelId="device-type-label"
+                value={formData.type}
+                label="Loại thiết bị"
+                onChange={handleSelectChange}
+              >
+                {deviceProfiles.map((profile) => (
+                  <MenuItem key={profile.id} value={profile.id}>
+                    {profile.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
             <TextField
               margin="normal"
               required
@@ -102,16 +137,6 @@ const DeviceForm: React.FC<DeviceFormProps> = ({ open, onClose, onSubmit, device
               label="Vị trí sử dụng"
               name="position"
               value={formData.position}
-              onChange={handleTextFieldChange}
-            />
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              id="type"
-              label="Loại thiết bị"
-              name="type"
-              value={formData.type}
               onChange={handleTextFieldChange}
             />
             <TextField
@@ -142,8 +167,8 @@ const DeviceForm: React.FC<DeviceFormProps> = ({ open, onClose, onSubmit, device
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Hủy</Button>
-        <Button onClick={handleSubmit} variant="contained" color="primary">
-          {isEditing ? 'Cập nhật' : 'Thêm mới'}
+        <Button onClick={handleSubmit} variant="contained" disabled={loading}>
+          {loading ? <CircularProgress size={24} /> : 'Lưu'}
         </Button>
       </DialogActions>
     </Dialog>

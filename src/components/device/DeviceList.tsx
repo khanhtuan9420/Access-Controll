@@ -18,7 +18,13 @@ import {
   DialogContentText,
   DialogActions,
   CircularProgress,
-  TablePagination
+  TablePagination,
+  TextField,
+  Stack,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
@@ -29,9 +35,15 @@ import { Device } from '../../types';
 import { deviceService } from '../../services/api';
 import DeviceForm from '../../components/device/DeviceForm';
 
+interface DeviceProfile {
+  id: string;
+  name: string;
+}
+
 const DeviceList: React.FC = () => {
   const [devices, setDevices] = useState<Device[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deviceProfiles, setDeviceProfiles] = useState<DeviceProfile[]>([]);
   const [openForm, setOpenForm] = useState(false);
   const [openDeleteConfirm, setOpenDeleteConfirm] = useState(false);
   const [currentDevice, setCurrentDevice] = useState<Device | null>(null);
@@ -54,7 +66,23 @@ const DeviceList: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchDevices();
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const [devicesData, profilesData] = await Promise.all([
+          deviceService.getDevices(),
+          deviceService.getDeviceProfiles()
+        ]);
+        setDevices(devicesData);
+        setDeviceProfiles(profilesData);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
   }, []);
 
   const handleOpenForm = (edit = false, device: Device | null = null) => {

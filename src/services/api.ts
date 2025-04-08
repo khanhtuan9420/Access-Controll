@@ -165,6 +165,32 @@ export const deviceService = {
     }
   },
   
+  getDeviceProfiles: async () => {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      throw new Error("Chưa đăng nhập hoặc token không tồn tại");
+    }
+    
+    const url = `${THINGSBOARD_HOST}/api/device-profiles`;
+    
+    try {
+      const response = await axios.get(url, {
+        headers: {
+          "Content-Type": "application/json",
+          "X-Authorization": `Bearer ${token}`,
+        },
+      });
+
+      return response.data.data.map((profile: any) => ({
+        id: profile.id.id,
+        name: profile.name
+      }));
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || "Lỗi không xác định khi lấy danh sách device profile");
+    }
+  },
+  
   getDeviceById: async (id: string): Promise<Device | undefined> => {
     await delay(300);
     return devices.find(device => device.id === id);
