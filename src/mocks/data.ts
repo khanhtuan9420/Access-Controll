@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { User, Device, Permission, Schedule } from '../types';
+import { User, Device, Permission, Schedule, HistoryEntry } from '../types';
 
 // Helper function to create dates
 const currentDate = new Date().toISOString();
@@ -145,6 +145,74 @@ export const schedules: Schedule[] = [
     startTime: tomorrow,
     endTime: nextWeek,
   },
+];
+
+// Mock History Entries
+export const historyEntries: HistoryEntry[] = [
+  {
+    id: uuidv4(),
+    userId: '1',
+    deviceId: '1',
+    timestamp: new Date('2024-03-01T08:00:00').toISOString(),
+    type: 'entry',
+    status: 'success'
+  },
+  {
+    id: uuidv4(),
+    userId: '1',
+    deviceId: '2',
+    timestamp: new Date('2024-03-01T08:30:00').toISOString(),
+    type: 'entry',
+    status: 'success'
+  },
+  {
+    id: uuidv4(),
+    userId: '2',
+    deviceId: '1',
+    timestamp: new Date('2024-03-01T09:00:00').toISOString(),
+    type: 'entry',
+    status: 'success'
+  },
+  {
+    id: uuidv4(),
+    userId: '1',
+    deviceId: '1',
+    timestamp: new Date('2024-03-01T12:00:00').toISOString(),
+    type: 'exit',
+    status: 'success'
+  },
+  {
+    id: uuidv4(),
+    userId: '2',
+    deviceId: '2',
+    timestamp: new Date('2024-03-01T13:00:00').toISOString(),
+    type: 'entry',
+    status: 'success'
+  },
+  {
+    id: uuidv4(),
+    userId: '1',
+    deviceId: '2',
+    timestamp: new Date('2024-03-01T17:00:00').toISOString(),
+    type: 'exit',
+    status: 'success'
+  },
+  {
+    id: uuidv4(),
+    userId: '2',
+    deviceId: '1',
+    timestamp: new Date('2024-03-01T17:30:00').toISOString(),
+    type: 'exit',
+    status: 'success'
+  },
+  {
+    id: uuidv4(),
+    userId: '2',
+    deviceId: '2',
+    timestamp: new Date('2024-03-01T18:00:00').toISOString(),
+    type: 'exit',
+    status: 'success'
+  }
 ];
 
 // Mock credentials for login

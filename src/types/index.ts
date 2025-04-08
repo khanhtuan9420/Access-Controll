@@ -51,3 +51,12 @@ export interface AuthState {
   isLoading: boolean;
   error: string | null;
 } 
+
+export interface HistoryEntry {
+  id: string;
+  userId: string;
+  deviceId: string;
+  timestamp: string;
+  type: 'entry' | 'exit';
+  status: 'success' | 'failed';
+} 
