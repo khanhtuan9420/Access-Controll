@@ -171,8 +171,3 @@ export const historyEntries: HistoryEntry[] = [
   }
 ];
 
-// Mock credentials for login
-export const credentials = {
-  username: 'admin',
-  password: 'admin123',
-}; 

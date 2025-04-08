@@ -35,9 +35,8 @@ const DeviceForm: React.FC<DeviceFormProps> = ({ open, onClose, onSubmit, device
   const [formData, setFormData] = useState({
     name: '',
     type: '',
-    position: '',
     location: '',
-    status: 'active',
+    status: 'Active',
   });
   const [deviceProfiles, setDeviceProfiles] = useState<DeviceProfile[]>([]);
   const [loading, setLoading] = useState(false);
@@ -115,28 +114,19 @@ const DeviceForm: React.FC<DeviceFormProps> = ({ open, onClose, onSubmit, device
             <FormControl fullWidth margin="normal">
               <InputLabel id="device-type-label">Loại thiết bị</InputLabel>
               <Select
+                name = "type"
                 labelId="device-type-label"
                 value={formData.type}
                 label="Loại thiết bị"
                 onChange={handleSelectChange}
               >
                 {deviceProfiles.map((profile) => (
-                  <MenuItem key={profile.id} value={profile.id}>
+                  <MenuItem key={profile.id} value={profile.name}>
                     {profile.name}
                   </MenuItem>
                 ))}
               </Select>
             </FormControl>
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              id="type"
-              label="Loại thiết bị"
-              name="type"
-              value={formData.type}
-              onChange={handleTextFieldChange}
-            />
             <TextField
               margin="normal"
               required
@@ -155,9 +145,8 @@ const DeviceForm: React.FC<DeviceFormProps> = ({ open, onClose, onSubmit, device
                 onChange={handleSelectChange}
                 label="Trạng thái"
               >
-                <MenuItem value="active">Hoạt động</MenuItem>
-                <MenuItem value="inactive">Không hoạt động</MenuItem>
-                <MenuItem value="maintenance">Bảo trì</MenuItem>
+                <MenuItem value="Active">Active</MenuItem>
+                <MenuItem value="Inactive">Inactive</MenuItem>
               </Select>
             </FormControl>
           </Stack>

@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { User, Device, Schedule, Permission, LoginCredentials } from '../types';
-import { users, schedules, permissions, credentials } from '../mocks/data';
+import { users, schedules, permissions } from '../mocks/data';
 import { v4 as uuidv4 } from 'uuid';
 
 // Delay function to simulate API calls
@@ -198,18 +198,9 @@ export const deviceService = {
     }
   },
   
-  // getDeviceById: async (id: string): Promise<Device | undefined> => {
-  //   await delay(300);
-  //   return devices.find(device:Device => device.id === id);
-  // },
-  getDeviceProfiles: async () => {
-    const token = localStorage.getItem("token");
-
-    if (!token) {
-      throw new Error("Chưa đăng nhập hoặc token không tồn tại");
-    }
-    
-    const url = `${THINGSBOARD_HOST}/api/device-profiles`;
+  getDeviceProfiles: async ( pageSize: number = 10, page: number = 0,) => {
+    const token = getToken();
+    const url = `${THINGSBOARD_HOST}/api/deviceProfileInfos`;
     
     try {
       const response = await axios.get(url, {
@@ -217,6 +208,7 @@ export const deviceService = {
           "Content-Type": "application/json",
           "X-Authorization": `Bearer ${token}`,
         },
+        params: { pageSize, page }, 
       });
 
       return response.data.data.map((profile: any) => ({
