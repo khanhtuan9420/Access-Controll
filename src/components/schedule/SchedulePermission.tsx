@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Box,
   Typography,
@@ -36,6 +36,7 @@ import { User, Device, Permission } from '../../types';
 import { userService, deviceService, permissionService } from '../../services/api';
 import DeleteIcon from '@mui/icons-material/Delete';
 import RefreshIcon from '@mui/icons-material/Refresh';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
@@ -63,6 +64,9 @@ const SchedulePermission: React.FC = () => {
   const [openForm, setOpenForm] = useState(false);
   const [openDeleteConfirm, setOpenDeleteConfirm] = useState(false);
   const [currentPermission, setCurrentPermission] = useState<Permission | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Pagination
   const [page, setPage] = useState(0);
@@ -236,6 +240,39 @@ const SchedulePermission: React.FC = () => {
     }
   };
 
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files[0]) {
+      setSelectedFile(event.target.files[0]);
+    }
+  };
+
+  const handleUpload = async () => {
+    if (!selectedFile) return;
+
+    setUploading(true);
+    try {
+      // Tạo FormData để gửi file
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+
+      // Gọi API upload file
+      await permissionService.uploadPermissions(formData);
+      
+      // Reset file đã chọn
+      setSelectedFile(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+
+      // Reload dữ liệu
+      await handleReload();
+    } catch (error) {
+      console.error('Error uploading file:', error);
+    } finally {
+      setUploading(false);
+    }
+  };
+
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
@@ -255,12 +292,45 @@ const SchedulePermission: React.FC = () => {
           <Typography variant="h4" component="h1">
             Lập lịch & Phân quyền
           </Typography>
-          <IconButton 
-            color="primary" 
-            onClick={handleReload}
-          >
-            <RefreshIcon />
-          </IconButton>
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <input
+                type="file"
+                accept=".xlsx,.xls"
+                onChange={handleFileChange}
+                ref={fileInputRef}
+                style={{ display: 'none' }}
+              />
+              <Button
+                variant="outlined"
+                startIcon={<CloudUploadIcon />}
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+              >
+                Chọn file
+              </Button>
+              {selectedFile && (
+                <Typography variant="body2" sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {selectedFile.name}
+                </Typography>
+              )}
+              {selectedFile && (
+                <Button
+                  variant="contained"
+                  onClick={handleUpload}
+                  disabled={uploading}
+                >
+                  {uploading ? <CircularProgress size={24} /> : 'Upload'}
+                </Button>
+              )}
+            </Box>
+            <IconButton 
+              color="primary" 
+              onClick={handleReload}
+            >
+              <RefreshIcon />
+            </IconButton>
+          </Box>
         </Box>
 
         <Paper sx={{ p: 3, mb: 4 }}>

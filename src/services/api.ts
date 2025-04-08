@@ -300,26 +300,6 @@ export const permissionService = {
   getPermissions: async (): Promise<Permission[]> => {
     await delay(300);
     return [...permissions];
-    // const token = localStorage.getItem("token");
-  
-    // if (!token) {
-    //   throw new Error("Chưa đăng nhập hoặc token không tồn tại");
-    // }
-  
-    // const url = `${THINGSBOARD_HOST}/api/permissions`; // URL API lấy danh sách quyền
-    
-    // try {
-    //   const response = await axios.get(url, {
-    //     headers: {
-    //       "Content-Type": "application/json",
-    //       "X-Authorization": `Bearer ${token}`,
-    //     },
-    //   });
-  
-    //   return response.data || []; // Trả về dữ liệu từ API
-    // } catch (error: any) {
-    //   throw new Error(error.response?.data?.message || "Lỗi không xác định khi lấy danh sách quyền");
-    // }
   },
   
   createPermission: async (userIds: string[], deviceIds: string[], startTime: string, endTime: string): Promise<Permission> => {
@@ -334,30 +314,25 @@ export const permissionService = {
     };
     permissions.push(newPermission);
     return newPermission;
+  },
+
+  uploadPermissions: async (formData: FormData): Promise<void> => {
+    await delay(300);
+    // TODO: Implement actual API call
     // const token = localStorage.getItem("token");
-  
     // if (!token) {
     //   throw new Error("Chưa đăng nhập hoặc token không tồn tại");
     // }
-  
-    // const url = `${THINGSBOARD_HOST}/api/permissions`; // URL API tạo quyền
-  
+    // const url = `${THINGSBOARD_HOST}/api/permissions/upload`;
     // try {
-    //   const response = await axios.post(url, {
-    //     userIds,
-    //     deviceIds,
-    //     startTime,
-    //     endTime,
-    //   }, {
+    //   await axios.post(url, formData, {
     //     headers: {
-    //       "Content-Type": "application/json",
+    //       "Content-Type": "multipart/form-data",
     //       "X-Authorization": `Bearer ${token}`,
     //     },
     //   });
-  
-    //   return response.data; // Trả về dữ liệu của quyền vừa tạo
     // } catch (error: any) {
-    //   throw new Error(error.response?.data?.message || "Lỗi không xác định khi tạo quyền");
+    //   throw new Error(error.response?.data?.message || "Lỗi không xác định khi upload file");
     // }
   },
 
@@ -368,23 +343,5 @@ export const permissionService = {
       throw new Error('Permission not found');
     }
     permissions.splice(index, 1);
-  //   const token = localStorage.getItem("token");
-  
-  //   if (!token) {
-  //     throw new Error("Chưa đăng nhập hoặc token không tồn tại");
-  //   }
-  
-  //   const url = `${THINGSBOARD_HOST}/api/permissions/${id}`; // URL API xóa quyền
-  
-  //   try {
-  //     await axios.delete(url, {
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //         "X-Authorization": `Bearer ${token}`,
-  //       },
-  //     });
-  //   } catch (error: any) {
-  //     throw new Error(error.response?.data?.message || "Lỗi không xác định khi xóa quyền");
-  //   }
   },
 }; 
