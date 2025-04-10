@@ -13,10 +13,11 @@ type AuthAction =
   | { type: 'LOGIN_REQUEST' }
   | { type: 'LOGIN_SUCCESS'; payload: { user: User; token: string } }
   | { type: 'LOGIN_FAILURE'; payload: string }
-  | { type: 'LOGOUT' };
+  | { type: 'LOGOUT' }
+  | { type: 'SET_USER'; payload: User };
 
 const initialState: AuthState = {
-  user: null,
+  user: localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')!) : null,
   token: localStorage.getItem('token'),
   isAuthenticated: !!localStorage.getItem('token'),
   isLoading: false,
@@ -56,6 +57,11 @@ const authReducer = (state: AuthState, action: AuthAction): AuthState => {
         user: null,
         token: null,
       };
+    case 'SET_USER':
+      return {
+        ...state,
+        user: action.payload,
+      };
     default:
       return state;
   }
@@ -64,13 +70,23 @@ const authReducer = (state: AuthState, action: AuthAction): AuthState => {
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [state, dispatch] = useReducer(authReducer, initialState);
 
+  // Kiểm tra token và lấy thông tin user khi component mount
   useEffect(() => {
-    if (state.token) {
-      localStorage.setItem('token', state.token);
-    } else {
-      localStorage.removeItem('token');
-    }
-  }, [state.token]);
+    const checkAuth = async () => {
+      const token = localStorage.getItem('token');
+      if (token && !state.user) {
+        try {
+          const user = await authService.getUserInfo(token);
+          dispatch({ type: 'SET_USER', payload: user });
+        } catch (error) {
+          console.error('Error checking auth:', error);
+          dispatch({ type: 'LOGOUT' });
+        }
+      }
+    };
+
+    checkAuth();
+  }, []);
 
   const login = async (credentials: LoginCredentials) => {
     try {

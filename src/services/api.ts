@@ -21,7 +21,7 @@ const getToken = () => {
 export const authService = {
   login: async (loginData: LoginCredentials) => {
     const url_login = `${THINGSBOARD_HOST}/api/auth/login`;
-    const url_user_info = `${THINGSBOARD_HOST}/api/auth/user`; // API lấy thông tin người dùng
+    const url_user_info = `${THINGSBOARD_HOST}/api/auth/user`;
     
     try {
       const loginResponse = await axios.post(url_login, {
@@ -34,8 +34,8 @@ export const authService = {
       });
       
       let token = loginResponse.data.token;
-      // Lưu token vào sessionStorage
-      sessionStorage.setItem("token", loginResponse.data.token || "");
+      // Lưu token vào localStorage
+      localStorage.setItem("token", token);
       
       const userResponse = await axios.get(url_user_info, {
         headers: {
@@ -45,22 +45,60 @@ export const authService = {
       });
 
       let fullName = userResponse.data.firstName + " " + userResponse.data.lastName;
+      const user = {
+        id: userResponse.data.id.id,
+        username: userResponse.data.name,
+        name: fullName === " " ? fullName : userResponse.data.name,
+        idNumber: userResponse.data.idNumber || "UNKNOWN",
+      };
+      
+      // Lưu thông tin user vào localStorage
+      localStorage.setItem("user", JSON.stringify(user));
       
       return {
-        user: {
-          id: userResponse.data.id.id,
-          username: userResponse.data.name,
-          name: fullName === " " ? fullName : userResponse.data.name,
-          idNumber: userResponse.data.idNumber || "UNKNOWN",
-        },
-        token: token,
+        user,
+        token,
       };
     } catch (error: any) {
       throw new Error(error.response?.data?.message || "Lỗi không xác định khi đăng nhập");
     }
   },
+
+  getUserInfo: async (token: string) => {
+    const url_user_info = `${THINGSBOARD_HOST}/api/auth/user`;
+    
+    try {
+      const userResponse = await axios.get(url_user_info, {
+        headers: {
+          "Content-Type": "application/json",
+          "X-Authorization": `Bearer ${token}`,
+        },
+      });
+
+      let fullName = userResponse.data.firstName + " " + userResponse.data.lastName;
+      const user = {
+        id: userResponse.data.id.id,
+        username: userResponse.data.name,
+        name: fullName === " " ? fullName : userResponse.data.name,
+        idNumber: userResponse.data.idNumber || "UNKNOWN",
+      };
+      
+      // Cập nhật thông tin user trong localStorage
+      localStorage.setItem("user", JSON.stringify(user));
+      
+      return user;
+    } catch (error: any) {
+      // Nếu có lỗi, xóa token và user khỏi localStorage
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      throw new Error(error.response?.data?.message || "Lỗi không xác định khi lấy thông tin người dùng");
+    }
+  },
+
   logout: async () => {
-    await delay(200);
+    // Xóa token và user khỏi localStorage
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
     return true;
   },
 };
