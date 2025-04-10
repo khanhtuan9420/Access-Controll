@@ -37,6 +37,7 @@ import { userService, deviceService, permissionService } from '../../services/ap
 import DeleteIcon from '@mui/icons-material/Delete';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import DownloadIcon from '@mui/icons-material/Download';
 
 const ITEM_HEIGHT = 48;
 const ITEM_PADDING_TOP = 8;
@@ -273,6 +274,19 @@ const SchedulePermission: React.FC = () => {
     }
   };
 
+  const handleDownloadTemplate = () => {
+    // Tạo URL cho file mẫu
+    const templateUrl = '/template/Set_Schedule.xlsx';
+    
+    // Tạo một thẻ a ẩn để tải file
+    const link = document.createElement('a');
+    link.href = templateUrl;
+    link.download = 'Set_Schedule.xlsx';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
@@ -294,6 +308,13 @@ const SchedulePermission: React.FC = () => {
           </Typography>
           <Box sx={{ display: 'flex', gap: 1 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Button
+                variant="outlined"
+                startIcon={<DownloadIcon />}
+                onClick={handleDownloadTemplate}
+              >
+                Tải file mẫu
+              </Button>
               <input
                 type="file"
                 accept=".xlsx,.xls"
