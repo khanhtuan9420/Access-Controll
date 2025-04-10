@@ -1,11 +1,21 @@
 import axios from 'axios';
-import { User, Device, Schedule, Permission, LoginCredentials } from '../types';
-import { users, devices, schedules, permissions, credentials } from '../mocks/data';
+import { User, Device, Schedule, Permission, LoginCredentials, HistoryEntry } from '../types';
+import { users, schedules, permissions, historyEntries } from '../mocks/data';
 import { v4 as uuidv4 } from 'uuid';
 
 // Delay function to simulate API calls
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 const THINGSBOARD_HOST = "http://18.142.251.211:8080"; 
+
+
+const getToken = () => {
+  const token = sessionStorage.getItem("token");
+
+  if (!token) {
+    throw new Error("Chưa đăng nhập hoặc token không tồn tại");
+  }
+  return token;
+}
 
 // Auth service
 export const authService = {
@@ -24,8 +34,8 @@ export const authService = {
       });
       
       let token = loginResponse.data.token;
-      // Lưu token vào localStorage
-      localStorage.setItem("token", token);
+      // Lưu token vào sessionStorage
+      sessionStorage.setItem("token", loginResponse.data.token || "");
       
       const userResponse = await axios.get(url_user_info, {
         headers: {
@@ -33,12 +43,14 @@ export const authService = {
           "X-Authorization": `Bearer ${token}`,
         },
       });
+
+      let fullName = userResponse.data.firstName + " " + userResponse.data.lastName;
       
       return {
         user: {
           id: userResponse.data.id.id,
           username: userResponse.data.name,
-          name: userResponse.data.firstName + " " + userResponse.data.lastName,
+          name: fullName === " " ? fullName : userResponse.data.name,
           idNumber: userResponse.data.idNumber || "UNKNOWN",
         },
         token: token,
@@ -63,10 +75,8 @@ export const userService = {
 
   // getUsers: async (pageSize: number, page: number) => {
 
-  //   const token = localStorage.getItem("token");
-  //   if (!token) {
-  //     throw new Error("Chưa đăng nhập hoặc token không tồn tại");
-  //   }
+  //   const token = getToken();
+
   //   const url_users = `${THINGSBOARD_HOST}/api/users`; // API lấy danh sách người dùng
     
   //   try {
@@ -132,13 +142,9 @@ export const deviceService = {
   // },
 
   getDevices: async (pageSize: number = 10, page: number = 0) => {
-    const token = localStorage.getItem("token");
-
-    if (!token) {
-      throw new Error("Chưa đăng nhập hoặc token không tồn tại");
-    }
+    const token = getToken();
     
-    const url_devices = `${THINGSBOARD_HOST}/api/tenant/devices`; // API lấy danh sách thiết bị
+    const url_devices = `${THINGSBOARD_HOST}/api/tenant/deviceInfos`; // API lấy danh sách thiết bị
     
     try {
       const response = await axios.get(url_devices, {
@@ -148,31 +154,53 @@ export const deviceService = {
         },
         params: { pageSize, page }, 
       });
+      
+      const deviceList = response.data.data;
 
-      // Ánh xạ dữ liệu từ API thành định dạng phù hợp với Device
-      const devices: Device[] = response.data.data.map((device: any) => ({
-        id: device.id.id, // Lấy id thiết bị từ đối tượng id
-        name: device.name, // Lấy tên thiết bị
-        position: "Unknown", // Cung cấp thông tin vị trí nếu có, nếu không có thể gán mặc định
-        type: device.type, // Lấy loại thiết bị
-        location: "Unknown", // Cung cấp thông tin vị trí nếu có
-        status: "Active", // Trạng thái có thể là "Active" hoặc một giá trị khác
-      }));
+          // Lấy telemetry location cho từng thiết bị
+      const devicesWithTelemetry: Device[] = await Promise.all(
+        deviceList.map(async (device: any) => {
+          const telemetryUrl = `${THINGSBOARD_HOST}/api/plugins/telemetry/DEVICE/${device.id.id}/values/timeseries?keys=location`;
 
-      return devices;
+          try {
+            const telemetryRes = await axios.get(telemetryUrl, {
+              headers: {
+                "Content-Type": "application/json",
+                "X-Authorization": `Bearer ${token}`,
+              },
+            });
+
+            const location = telemetryRes.data.location?.[0]?.value || "Unknown";
+
+            return {
+              id: device.id.id,
+              name: device.name,
+              type: device.type,
+              location,
+              status: device.active ? "Active" : "Inactive",
+            };
+          } catch (telemetryError) {
+            // Trường hợp không lấy được telemetry, fallback lại giá trị mặc định
+            return {
+              id: device.id.id,
+              name: device.name,
+              type: device.type,
+              location: "Unknown",
+              status: device.active ? "Active" : "Inactive",
+            };
+          }
+        })
+      );
+
+      return devicesWithTelemetry;
     } catch (error: any) {
       throw new Error(error.response?.data?.message || "Lỗi không xác định khi lấy danh sách thiết bị");
     }
   },
   
-  getDeviceProfiles: async () => {
-    const token = localStorage.getItem("token");
-
-    if (!token) {
-      throw new Error("Chưa đăng nhập hoặc token không tồn tại");
-    }
-    
-    const url = `${THINGSBOARD_HOST}/api/device-profiles`;
+  getDeviceProfiles: async ( pageSize: number = 10, page: number = 0,) => {
+    const token = getToken();
+    const url = `${THINGSBOARD_HOST}/api/deviceProfileInfos`;
     
     try {
       const response = await axios.get(url, {
@@ -180,6 +208,7 @@ export const deviceService = {
           "Content-Type": "application/json",
           "X-Authorization": `Bearer ${token}`,
         },
+        params: { pageSize, page }, 
       });
 
       return response.data.data.map((profile: any) => ({
@@ -191,25 +220,10 @@ export const deviceService = {
     }
   },
   
-  getDeviceById: async (id: string): Promise<Device | undefined> => {
-    await delay(300);
-    return devices.find(device => device.id === id);
-  },
-  
   createDevice: async (deviceData: Omit<Device, 'id'>): Promise<Device> => {
-    // await delay(300);
-    // const newDevice: Device = {
-    //   id: uuidv4(),
-    //   ...deviceData,
-    // };
-    // devices.push(newDevice);
-    // return newDevice;
 
-    const token = localStorage.getItem("token");
 
-    if (!token) {
-      throw new Error("Chưa đăng nhập hoặc token không tồn tại");
-    }
+    const token = getToken();
 
     const url = `${THINGSBOARD_HOST}/api/device`;
 
@@ -224,7 +238,6 @@ export const deviceService = {
       const newDevice: Device = {
         id: response.data.id.id,
         name: response.data.name,
-        position: deviceData.position || "Unknown",
         type: deviceData.type,
         location: deviceData.location || "Unknown",
         status: "Active", // Trạng thái mặc định là "Active", có thể thay đổi tùy theo dữ liệu trả về
@@ -239,22 +252,9 @@ export const deviceService = {
   },
   
   updateDevice: async (id: string, deviceData: Partial<Device>): Promise<Device> => {
-    // await delay(300);
-    // const index = devices.findIndex(device => device.id === id);
-    // if (index === -1) {
-    //   throw new Error('Device not found');
-    // }
-    // const updatedDevice = { ...devices[index], ...deviceData };
-    // devices[index] = updatedDevice;
-    // return updatedDevice;
 
-    const token = localStorage.getItem("token");
-
-    if (!token) {
-      throw new Error("Chưa đăng nhập hoặc token không tồn tại");
-    }
+    const token = getToken();
     const url_credential = `${THINGSBOARD_HOST}/api/device/${id}/credentials`;
-
 
     try {
       const response_access_token = await axios.get(url_credential, {
@@ -264,12 +264,22 @@ export const deviceService = {
         },
       });
 
-      console.log(response_access_token)
-
       let access_token = response_access_token.data.credentialsId;
       const url_update = `${THINGSBOARD_HOST}/api/device?accessToken=${access_token}`;
 
-      const response = await axios.post(url_update, deviceData, {
+      let data = {
+        id: {
+          id: id,
+          entityType: "DEVICE"
+        },
+        name: deviceData.name,
+        type: deviceData.type,
+        location: deviceData.location || "Unknown",
+        status: "Active",  
+
+      }
+
+      const response = await axios.post(url_update, data, {
         headers: {
           "Content-Type": "application/json",
           "X-Authorization": `Bearer ${token}`,
@@ -279,7 +289,6 @@ export const deviceService = {
       const updatedDevice: Device = {
         id: response.data.id.id,
         name: response.data.name,
-        position: deviceData.position || response.data.additionalInfo?.position || "Unknown",
         type: deviceData.type || response.data.type,
         location: deviceData.location || response.data.additionalInfo?.location || "Unknown",
         status: "Active",  // Có thể thay đổi tùy vào logic bạn sử dụng
@@ -292,20 +301,8 @@ export const deviceService = {
   },
   
   deleteDevice: async (id: string): Promise<void> => {
-  //   await delay(300);
-  //   const index = devices.findIndex(device => device.id === id);
-  //   if (index === -1) {
-  //     throw new Error('Device not found');
-  //   }
-  //   devices.splice(index, 1);
-  // },
 
-  const token = localStorage.getItem("token");
-
-    if (!token) {
-      throw new Error("Chưa đăng nhập hoặc token không tồn tại");
-    }
-
+    const token = getToken();
     const url = `${THINGSBOARD_HOST}/api/device/${id}`;
 
     try {
@@ -326,6 +323,26 @@ export const permissionService = {
   getPermissions: async (): Promise<Permission[]> => {
     await delay(300);
     return [...permissions];
+    // const token = getToken("token");
+  
+    // if (!token) {
+    //   throw new Error("Chưa đăng nhập hoặc token không tồn tại");
+    // }
+  
+    // const url = `${THINGSBOARD_HOST}/api/permissions`; // URL API lấy danh sách quyền
+    
+    // try {
+    //   const response = await axios.get(url, {
+    //     headers: {
+    //       "Content-Type": "application/json",
+    //       "X-Authorization": `Bearer ${token}`,
+    //     },
+    //   });
+  
+    //   return response.data || []; // Trả về dữ liệu từ API
+    // } catch (error: any) {
+    //   throw new Error(error.response?.data?.message || "Lỗi không xác định khi lấy danh sách quyền");
+    // }
   },
   
   createPermission: async (userIds: string[], deviceIds: string[], startTime: string, endTime: string): Promise<Permission> => {
@@ -340,6 +357,7 @@ export const permissionService = {
     };
     permissions.push(newPermission);
     return newPermission;
+  
   },
 
   uploadPermissions: async (formData: FormData): Promise<void> => {
@@ -369,18 +387,110 @@ export const permissionService = {
       throw new Error('Permission not found');
     }
     permissions.splice(index, 1);
+  //   const token = getToken("token");
+  
+  //   const url = `${THINGSBOARD_HOST}/api/permissions/${id}`; // URL API xóa quyền
+  
+  //   try {
+  //     await axios.delete(url, {
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         "X-Authorization": `Bearer ${token}`,
+  //       },
+  //     });
+  //   } catch (error: any) {
+  //     throw new Error(error.response?.data?.message || "Lỗi không xác định khi xóa quyền");
+  //   }
   },
 }; 
 
 export const historyService = {
-  getHistory: async (data : any) => {
-    try {
-      const url = ''
-      const loginResponse = await axios.post(url, data);
-      return loginResponse.data;
-    } catch (error: any) {
-      console.error(error);
+  getHistories: async (data: {
+    selectedUsers: string[],
+    selectedDevices: string[],
+    startTime: Date | null,
+    endTime: Date | null,
+  }): Promise<HistoryEntry[]> => {
+    const token = getToken();
+
+    const { selectedUsers, selectedDevices, startTime, endTime } = data;
+    if (!startTime || !endTime) {
+      throw new Error("startTime và endTime là bắt buộc!");
     }
+    const startTs = startTime.getTime();
+    const endTs = endTime.getTime();
+
+    // Step 1: Gọi API user-history → [{ histId, userId }]
+    const userHistories = await Promise.all(
+      selectedUsers.map(async (userId) => {
+        const url = `${THINGSBOARD_HOST}/api/custom/user-history?userId=${userId}&startTs=${startTs}&endTs=${endTs}`;
+
+        try {
+          const res = await axios.get(url, {
+            headers: {
+              "X-Authorization": `Bearer ${token}`,
+            },
+          });
+
+          // Giả sử trả về mảng [{ histId, userId }]
+          return res.data;
+        } catch (error) {
+          console.warn(`Không lấy được lịch sử cho user ${userId}`, error);
+          return [];
+        }
+      })
+    );
+
+    // Flatten mảng 2D thành 1D
+    const flattenedUserHistories = userHistories.flat();
+
+    // Step 2: Gọi API device-history → [{ histId, deviceId, type, status }]
+    const deviceHistories = await Promise.all(
+      selectedDevices.map(async (deviceId) => {
+        const url = `${THINGSBOARD_HOST}/api/plugins/telemetry/DEVICE/${deviceId}/values/timeseries`;
+
+        try {
+          const res = await axios.get(url, {
+            headers: {
+              "X-Authorization": `Bearer ${token}`,
+            },
+            params: {
+              keys: "type,status",
+              startTs,
+              endTs,
+            },
+          });
+
+          // Giả sử trả về mảng [{ histId, deviceId, type, status }]
+          return res.data;
+        } catch (error) {
+          console.warn(`Không lấy được lịch sử cho device ${deviceId}`, error);
+          return [];
+        }
+      })
+    );
+
+    const flattenedDeviceHistories = deviceHistories.flat();
+
+    // Step 3: Map theo histId
+    const result : HistoryEntry[] = [];
+
+    flattenedUserHistories.forEach(userHist => {
+      const matchedDevice = flattenedDeviceHistories.find(deviceHist => deviceHist.histId === userHist.histId);
+      if (matchedDevice) {
+        result.push({
+          id: userHist.histId,
+          userId: userHist.userId,
+          deviceId: matchedDevice.deviceId,
+          timestamp: matchedDevice.timestamp,
+          type: matchedDevice.type,
+          status: matchedDevice.status,
+        });
+      }
+    });
+
+    return result;
   },
 };
+
 
