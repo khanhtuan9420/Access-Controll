@@ -45,13 +45,14 @@ const History: React.FC = () => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const [usersData, devicesData] = await Promise.all([
+        const [usersData, devicesData, historiesData] = await Promise.all([
           userService.getUsers(),
           deviceService.getDevices(),
+          historyService.getHistories()
         ]);
         setUsers(usersData);
         setDevices(devicesData);
-        setFilteredHistory(historyEntries);
+        setFilteredHistory(historiesData);
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
@@ -63,7 +64,7 @@ const History: React.FC = () => {
   }, []);
 
   const handleFilter = async () => {
-    const data: HistoryEntry[] = await historyService.getHistories({
+    const data: HistoryEntry[] = await historyService.getHistorieByListID({
       selectedUsers,
       selectedDevices,
       startTime,

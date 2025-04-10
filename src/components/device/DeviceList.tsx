@@ -122,7 +122,7 @@ const DeviceList: React.FC = () => {
     setPage(0);
   };
 
-  const handleFormSubmit = async (deviceData: Omit<Device, 'id'>) => {
+  const handleFormSubmit = async (deviceData: Omit<Partial<Device>, 'id'>) => {
     try {
       if (isEditing && currentDevice) {
         await deviceService.updateDevice(currentDevice.id, deviceData);
