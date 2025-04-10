@@ -117,31 +117,17 @@ const DeviceList: React.FC = () => {
     setPage(0);
   };
 
-  const handleFormSubmit = (id: string | null, deviceData: any) => {
-    if (id) {
-      handleUpdateDevice(id, deviceData);
-    } else {
-      handleAddDevice(deviceData);
-    }
-  };
-
-  const handleAddDevice = async (deviceData: Omit<Device, 'id'>) => {
+  const handleFormSubmit = async (deviceData: Omit<Device, 'id'>) => {
     try {
-      await deviceService.createDevice(deviceData);
+      if (isEditing && currentDevice) {
+        await deviceService.updateDevice(currentDevice.id, deviceData);
+      } else {
+        await deviceService.createDevice(deviceData);
+      }
       fetchDevices();
       handleCloseForm();
     } catch (error) {
-      console.error('Error adding device:', error);
-    }
-  };
-
-  const handleUpdateDevice = async (id: string, deviceData: Partial<Device>) => {
-    try {
-      await deviceService.updateDevice(id, deviceData);
-      fetchDevices();
-      handleCloseForm();
-    } catch (error) {
-      console.error('Error updating device:', error);
+      console.error('Error submitting form:', error);
     }
   };
 
@@ -212,6 +198,9 @@ const DeviceList: React.FC = () => {
                   <TableCell>Loại</TableCell>
                   <TableCell>Vị trí</TableCell>
                   <TableCell>Trạng thái</TableCell>
+                  <TableCell>Camera</TableCell>
+                  <TableCell>RFID</TableCell>
+                  <TableCell>Vân tay</TableCell>
                   <TableCell align="center">Thao tác</TableCell>
                 </TableRow>
               </TableHead>
@@ -223,6 +212,9 @@ const DeviceList: React.FC = () => {
                     <TableCell>{device.type}</TableCell>
                     <TableCell>{device.location}</TableCell>
                     <TableCell>{device.status}</TableCell>
+                    <TableCell>{device.camStatus}</TableCell>
+                    <TableCell>{device.rfidStatus}</TableCell>
+                    <TableCell>{device.fingerPrintStatus}</TableCell>
                     <TableCell align="center">
                       <IconButton
                         color="secondary"

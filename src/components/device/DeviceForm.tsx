@@ -26,17 +26,30 @@ interface DeviceProfile {
 interface DeviceFormProps {
   open: boolean;
   onClose: () => void;
-  onSubmit: (id: string | null, deviceData: any) => void;
+  onSubmit: (deviceData: Omit<Device, 'id'>) => Promise<void>;
   device: Device | null;
   isEditing: boolean;
 }
 
+interface FormData {
+  name: string;
+  type: string;
+  location: string;
+  status: string;
+  camStatus: string;
+  rfidStatus: string;
+  fingerPrintStatus: string;
+}
+
 const DeviceForm: React.FC<DeviceFormProps> = ({ open, onClose, onSubmit, device, isEditing }) => {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     name: '',
     type: '',
     location: '',
     status: 'Active',
+    camStatus: 'Active',
+    rfidStatus: 'Active',
+    fingerPrintStatus: 'Active'
   });
   const [deviceProfiles, setDeviceProfiles] = useState<DeviceProfile[]>([]);
   const [loading, setLoading] = useState(false);
@@ -55,43 +68,52 @@ const DeviceForm: React.FC<DeviceFormProps> = ({ open, onClose, onSubmit, device
   }, []);
 
   useEffect(() => {
-    if (device && isEditing) {
+    if (device) {
       setFormData({
-        name: device.name,
+        name: device.name || '',
         type: device.type || '',
         location: device.location || '',
-        status: device.status || 'active',
+        status: device.status || 'Active',
+        camStatus: device.camStatus || 'Active',
+        rfidStatus: device.rfidStatus || 'Active',
+        fingerPrintStatus: device.fingerPrintStatus || 'Active'
       });
     } else {
-      // Reset the form when adding a new device
       setFormData({
         name: '',
         type: '',
         location: '',
-        status: 'active',
+        status: 'Active',
+        camStatus: 'Active',
+        rfidStatus: 'Active',
+        fingerPrintStatus: 'Active'
       });
     }
-  }, [device, isEditing]);
+  }, [device]);
 
   const handleTextFieldChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleSelectChange = (e: SelectChangeEvent) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
+    if (name) {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(isEditing && device ? device.id : null, formData);
+    setLoading(true);
+    try {
+      await onSubmit(formData);
+      onClose();
+    } catch (error) {
+      console.error('Error submitting form:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -144,6 +166,42 @@ const DeviceForm: React.FC<DeviceFormProps> = ({ open, onClose, onSubmit, device
                 value={formData.status}
                 onChange={handleSelectChange}
                 label="Trạng thái"
+              >
+                <MenuItem value="Active">Active</MenuItem>
+                <MenuItem value="Inactive">Inactive</MenuItem>
+              </Select>
+            </FormControl>
+            <FormControl fullWidth margin="normal">
+              <InputLabel>Trạng thái Camera</InputLabel>
+              <Select
+                name="camStatus"
+                value={formData.camStatus}
+                onChange={handleSelectChange}
+                label="Trạng thái Camera"
+              >
+                <MenuItem value="Active">Active</MenuItem>
+                <MenuItem value="Inactive">Inactive</MenuItem>
+              </Select>
+            </FormControl>
+            <FormControl fullWidth margin="normal">
+              <InputLabel>Trạng thái RFID</InputLabel>
+              <Select
+                name="rfidStatus"
+                value={formData.rfidStatus}
+                onChange={handleSelectChange}
+                label="Trạng thái RFID"
+              >
+                <MenuItem value="Active">Active</MenuItem>
+                <MenuItem value="Inactive">Inactive</MenuItem>
+              </Select>
+            </FormControl>
+            <FormControl fullWidth margin="normal">
+              <InputLabel>Trạng thái Vân tay</InputLabel>
+              <Select
+                name="fingerPrintStatus"
+                value={formData.fingerPrintStatus}
+                onChange={handleSelectChange}
+                label="Trạng thái Vân tay"
               >
                 <MenuItem value="Active">Active</MenuItem>
                 <MenuItem value="Inactive">Inactive</MenuItem>

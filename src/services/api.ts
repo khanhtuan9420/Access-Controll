@@ -143,8 +143,7 @@ export const deviceService = {
 
   getDevices: async (pageSize: number = 10, page: number = 0) => {
     const token = getToken();
-    
-    const url_devices = `${THINGSBOARD_HOST}/api/tenant/deviceInfos`; // API lấy danh sách thiết bị
+    const url_devices = `${THINGSBOARD_HOST}/api/tenant/deviceInfos`;
     
     try {
       const response = await axios.get(url_devices, {
@@ -156,49 +155,48 @@ export const deviceService = {
       });
       
       const deviceList = response.data.data;
-
-          // Lấy telemetry location cho từng thiết bị
       const devicesWithTelemetry: Device[] = await Promise.all(
         deviceList.map(async (device: any) => {
           const telemetryUrl = `${THINGSBOARD_HOST}/api/plugins/telemetry/DEVICE/${device.id.id}/values/timeseries?keys=location`;
-
           try {
             const telemetryRes = await axios.get(telemetryUrl, {
               headers: {
                 "Content-Type": "application/json",
                 "X-Authorization": `Bearer ${token}`,
-              },
+              }
             });
-
-            const location = telemetryRes.data.location?.[0]?.value || "Unknown";
-
             return {
               id: device.id.id,
               name: device.name,
               type: device.type,
-              location,
-              status: device.active ? "Active" : "Inactive",
+              location: telemetryRes.data.location?.[0]?.value || '',
+              status: device.status === false || !device.status ? 'Inactive' : 'Active',
+              camStatus: device.camStatus === false || !device.camStatus ? 'Inactive' : 'Active',
+              rfidStatus: device.rfidStatus === false || !device.rfidStatus ? 'Inactive' : 'Active',
+              fingerPrintStatus: device.fingerPrintStatus === false || !device.fingerPrintStatus ? 'Inactive' : 'Active'
             };
-          } catch (telemetryError) {
-            // Trường hợp không lấy được telemetry, fallback lại giá trị mặc định
+          } catch (error) {
+            console.error('Error fetching device telemetry:', error);
             return {
               id: device.id.id,
               name: device.name,
               type: device.type,
-              location: "Unknown",
-              status: device.active ? "Active" : "Inactive",
+              location: '',
+              status: device.status === false || !device.status ? 'Inactive' : 'Active',
+              camStatus: device.camStatus === false || !device.camStatus ? 'Inactive' : 'Active',
+              rfidStatus: device.rfidStatus === false || !device.rfidStatus ? 'Inactive' : 'Active',
+              fingerPrintStatus: device.fingerPrintStatus === false || !device.fingerPrintStatus ? 'Inactive' : 'Active'
             };
           }
         })
       );
-
       return devicesWithTelemetry;
     } catch (error: any) {
       throw new Error(error.response?.data?.message || "Lỗi không xác định khi lấy danh sách thiết bị");
     }
   },
   
-  getDeviceProfiles: async ( pageSize: number = 10, page: number = 0,) => {
+  getDeviceProfiles: async (pageSize: number = 10, page: number = 0) => {
     const token = getToken();
     const url = `${THINGSBOARD_HOST}/api/deviceProfileInfos`;
     
@@ -221,10 +219,7 @@ export const deviceService = {
   },
   
   createDevice: async (deviceData: Omit<Device, 'id'>): Promise<Device> => {
-
-
     const token = getToken();
-
     const url = `${THINGSBOARD_HOST}/api/device`;
 
     try {
@@ -232,76 +227,35 @@ export const deviceService = {
         headers: {
           "Content-Type": "application/json",
           "X-Authorization": `Bearer ${token}`,
-        }, 
+        }
       });
 
-      const newDevice: Device = {
+      return {
         id: response.data.id.id,
-        name: response.data.name,
-        type: deviceData.type,
-        location: deviceData.location || "Unknown",
-        status: "Active", // Trạng thái mặc định là "Active", có thể thay đổi tùy theo dữ liệu trả về
+        ...deviceData
       };
-
-      console.log(response)
-
-      return newDevice;
     } catch (error: any) {
       throw new Error(error.response?.data?.message || "Lỗi không xác định khi tạo thiết bị");
     }
   },
   
-  updateDevice: async (id: string, deviceData: Partial<Device>): Promise<Device> => {
-
+  updateDevice: async (id: string, deviceData: Partial<Device>): Promise<void> => {
     const token = getToken();
-    const url_credential = `${THINGSBOARD_HOST}/api/device/${id}/credentials`;
+    const url = `${THINGSBOARD_HOST}/api/device/${id}`;
 
     try {
-      const response_access_token = await axios.get(url_credential, {
+      await axios.post(url, deviceData, {
         headers: {
           "Content-Type": "application/json",
           "X-Authorization": `Bearer ${token}`,
-        },
+        }
       });
-
-      let access_token = response_access_token.data.credentialsId;
-      const url_update = `${THINGSBOARD_HOST}/api/device?accessToken=${access_token}`;
-
-      let data = {
-        id: {
-          id: id,
-          entityType: "DEVICE"
-        },
-        name: deviceData.name,
-        type: deviceData.type,
-        location: deviceData.location || "Unknown",
-        status: "Active",  
-
-      }
-
-      const response = await axios.post(url_update, data, {
-        headers: {
-          "Content-Type": "application/json",
-          "X-Authorization": `Bearer ${token}`,
-        },
-      });
-
-      const updatedDevice: Device = {
-        id: response.data.id.id,
-        name: response.data.name,
-        type: deviceData.type || response.data.type,
-        location: deviceData.location || response.data.additionalInfo?.location || "Unknown",
-        status: "Active",  // Có thể thay đổi tùy vào logic bạn sử dụng
-      };
-
-      return updatedDevice;
     } catch (error: any) {
       throw new Error(error.response?.data?.message || "Lỗi không xác định khi cập nhật thiết bị");
     }
   },
   
   deleteDevice: async (id: string): Promise<void> => {
-
     const token = getToken();
     const url = `${THINGSBOARD_HOST}/api/device/${id}`;
 
@@ -310,7 +264,7 @@ export const deviceService = {
         headers: {
           "Content-Type": "application/json",
           "X-Authorization": `Bearer ${token}`,
-        },
+        }
       });
     } catch (error: any) {
       throw new Error(error.response?.data?.message || "Lỗi không xác định khi xóa thiết bị");

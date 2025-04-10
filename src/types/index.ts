@@ -16,6 +16,9 @@ export interface Device {
   type: string;
   location: string;
   status: string;
+  camStatus: string;
+  rfidStatus: string;
+  fingerPrintStatus: string;
 }
 
 // Schedule types
