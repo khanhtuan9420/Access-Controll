@@ -125,12 +125,35 @@ export const userService = {
   },
   
   deleteUser: async (id: string): Promise<void> => {
-    await delay(300);
-    const index = users.findIndex(user => user.id === id);
-    if (index === -1) {
-      throw new Error('User not found');
+    const token = getToken();
+    const url = `${THINGSBOARD_HOST}/api/user/${id}`;
+
+    try {
+      await axios.delete(url, {
+        headers: {
+          "Content-Type": "application/json",
+          "X-Authorization": `Bearer ${token}`,
+        }
+      });
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || "Lỗi không xác định khi xóa người dùng");
     }
-    users.splice(index, 1);
+  },
+
+  uploadUsers: async (formData: FormData): Promise<void> => {
+    const token = getToken();
+    const url = `${THINGSBOARD_HOST}/api/user/upload`;
+
+    try {
+      await axios.post(url, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          "X-Authorization": `Bearer ${token}`,
+        }
+      });
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || "Lỗi không xác định khi tải lên danh sách người dùng");
+    }
   },
 };
 
@@ -268,6 +291,22 @@ export const deviceService = {
       });
     } catch (error: any) {
       throw new Error(error.response?.data?.message || "Lỗi không xác định khi xóa thiết bị");
+    }
+  },
+
+  uploadDevices: async (formData: FormData): Promise<void> => {
+    const token = getToken();
+    const url = `${THINGSBOARD_HOST}/api/device/upload`;
+
+    try {
+      await axios.post(url, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          "X-Authorization": `Bearer ${token}`,
+        }
+      });
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || "Lỗi không xác định khi tải lên danh sách thiết bị");
     }
   },
 };

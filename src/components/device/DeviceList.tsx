@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Typography,
   Paper,
@@ -31,6 +31,8 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import RefreshIcon from '@mui/icons-material/Refresh';
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import DownloadIcon from '@mui/icons-material/Download';
 import { Device } from '../../types';
 import { deviceService } from '../../services/api';
 import DeviceForm from '../../components/device/DeviceForm';
@@ -48,6 +50,9 @@ const DeviceList: React.FC = () => {
   const [openDeleteConfirm, setOpenDeleteConfirm] = useState(false);
   const [currentDevice, setCurrentDevice] = useState<Device | null>(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Pagination state
   const [page, setPage] = useState(0);
@@ -159,24 +164,101 @@ const DeviceList: React.FC = () => {
   const emptyRows = page > 0 ? Math.max(0, (1 + page) * rowsPerPage - devices.length) : 0;
   const paginatedDevices = devices.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files[0]) {
+      setSelectedFile(event.target.files[0]);
+    }
+  };
+
+  const handleUpload = async () => {
+    if (!selectedFile) return;
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+
+      await deviceService.uploadDevices(formData);
+      
+      setSelectedFile(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+
+      await fetchDevices();
+    } catch (error) {
+      console.error('Error uploading file:', error);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleDownloadTemplate = () => {
+    const templateUrl = '/template/Add_Devices.xlsx';
+    
+    const link = document.createElement('a');
+    link.href = templateUrl;
+    link.download = 'Add_Devices.xlsx';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
         <Typography variant="h4" component="h1">
           Quản lý thiết bị
         </Typography>
-        <Box>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Button
+              variant="outlined"
+              startIcon={<DownloadIcon />}
+              onClick={handleDownloadTemplate}
+            >
+              Tải file mẫu
+            </Button>
+            <input
+              type="file"
+              accept=".xlsx,.xls"
+              onChange={handleFileChange}
+              ref={fileInputRef}
+              style={{ display: 'none' }}
+            />
+            <Button
+              variant="outlined"
+              startIcon={<CloudUploadIcon />}
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+            >
+              Chọn file
+            </Button>
+            {selectedFile && (
+              <Typography variant="body2" sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {selectedFile.name}
+              </Typography>
+            )}
+            {selectedFile && (
+              <Button
+                variant="contained"
+                onClick={handleUpload}
+                disabled={uploading}
+              >
+                {uploading ? <CircularProgress size={24} /> : 'Upload'}
+              </Button>
+            )}
+          </Box>
           <IconButton 
             color="primary" 
-            onClick={handleReload}
-            sx={{ mr: 1 }}
+            onClick={fetchDevices}
           >
             <RefreshIcon />
           </IconButton>
           <Fab
             color="primary"
             aria-label="add"
-            onClick={() => handleOpenForm(false, null)}
+            onClick={() => handleOpenForm()}
           >
             <AddIcon />
           </Fab>
