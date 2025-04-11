@@ -6,6 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 // Delay function to simulate API calls
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 const THINGSBOARD_HOST = "http://18.142.251.211:8080"; 
+const BE_HOST = "http://maxuanngoc.id.vn:8090";
 
 
 const getToken = () => {
@@ -30,12 +31,13 @@ export const authService = {
       }, {
         headers: {
           "Content-Type": "application/json",
+
         },
       });
       
       let token = loginResponse.data.token;
       // Lưu token vào localStorage
-      localStorage.setItem("token", token);
+      sessionStorage.setItem("token", token);
       
       const userResponse = await axios.get(url_user_info, {
         headers: {
@@ -49,7 +51,7 @@ export const authService = {
         id: userResponse.data.id.id,
         username: userResponse.data.name,
         name: fullName === " " ? fullName : userResponse.data.name,
-        idNumber: userResponse.data.idNumber || "UNKNOWN",
+        idNumber: userResponse.data.idNumber || "unknown",
       };
       
       // Lưu thông tin user vào localStorage
@@ -84,21 +86,21 @@ export const authService = {
       };
       
       // Cập nhật thông tin user trong localStorage
-      localStorage.setItem("user", JSON.stringify(user));
+      sessionStorage.setItem("user", JSON.stringify(user));
       
       return user;
     } catch (error: any) {
       // Nếu có lỗi, xóa token và user khỏi localStorage
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
+      sessionStorage.removeItem("token");
+      sessionStorage.removeItem("user");
       throw new Error(error.response?.data?.message || "Lỗi không xác định khi lấy thông tin người dùng");
     }
   },
 
   logout: async () => {
     // Xóa token và user khỏi localStorage
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
+    sessionStorage.removeItem("token");
+    sessionStorage.removeItem("user");
     return true;
   },
 };
@@ -106,71 +108,107 @@ export const authService = {
 // User service
 export const userService = {
 
-  getUsers: async (): Promise<User[]> => {
-    await delay(300);
-    return [...users];
-  },
+  getUsers: async () => {
 
-  // getUsers: async (pageSize: number, page: number) => {
-
-  //   const token = getToken();
-
-  //   const url_users = `${THINGSBOARD_HOST}/api/users`; // API lấy danh sách người dùng
+    const url_users = `${BE_HOST}/api/User/All`; // API lấy danh sách người dùng
     
-  //   try {
-  //     const response = await axios.get(url_users, {
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //         "X-Authorization": `Bearer ${token}`,
-  //       },
-  //       params: {
-  //         pageSize,
-  //         page
-  //       },
-  //     });
-      
-  //     console.log(response)
-  //     return response.data.data || [];
-  //   } catch (error: any) {
-  //     throw new Error(error.response?.data?.message || "Lỗi không xác định khi lấy danh sách người dùng");
-  //   }
-  // },
+    try {
+      const response = await axios.get(url_users, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      return response.data.map((userProfile: any) => ({
+        id: userProfile.id,
+        username: userProfile.userName,
+        name: userProfile.fullName,
+        idNumber: userProfile.cccd,
+        faceImage: userProfile.faceImg,
+        fingerPrint: userProfile.fingerprint
+      }));
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || "Lỗi không xác định khi lấy danh sách người dùng");
+    }
+  },
   
   getUserById: async (id: string): Promise<User | undefined> => {
-    await delay(300);
-    return users.find(user => user.id === id);
-  },
-  
-  createUser: async (userData: Omit<User, 'id'>): Promise<User> => {
-    await delay(300);
-    const newUser: User = {
-      id: uuidv4(),
-      ...userData,
-    };
-    users.push(newUser);
-    return newUser;
-  },
-  
-  updateUser: async (id: string, userData: Partial<User>): Promise<User> => {
-    await delay(300);
-    const index = users.findIndex(user => user.id === id);
-    if (index === -1) {
-      throw new Error('User not found');
+    const url_user = `${BE_HOST}/api/User/${id}`; // API lấy danh sách người dùng
+    
+    try {
+      const response = await axios.get(url_user, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      return response.data.map((userProfile: any) => ({
+        id: userProfile.id,
+        username: userProfile.userName,
+        name: userProfile.fullName,
+        idNumber: userProfile.cccd,
+        faceImage: userProfile.faceImg,
+        fingerPrint: userProfile.fingerprint
+      }));
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || "Lỗi không xác định khi lấy dữ liệu người dùng");
     }
-    const updatedUser = { ...users[index], ...userData };
-    users[index] = updatedUser;
-    return updatedUser;
+  },
+  
+  createUser: async (userData: Omit<User, 'id'>): Promise<void> => {
+    const url = `${BE_HOST}/api/User`;
+
+    const param = {
+      fullName: userData.name,
+      userName: userData.username,
+      faceImg: userData.faceImage,
+      cccd: userData.idNumber,
+      fingerprint: userData.fingerPrint
+    }
+
+    try {
+      await axios.post(url, param, {
+        headers: {
+          "Content-Type": "application/json",
+        }
+      });
+
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || "Lỗi không xác định khi tạo người dùng");
+    }
+  },
+  
+  updateUser: async (id: string, userData: Partial<User>): Promise<void> => {
+    const url_update_user = `${BE_HOST}/api/User/userId?userId=${id}`;
+
+    const param = {
+      id: id,
+      fullName: userData.name,
+      userName: userData.username,
+      faceImg: userData.faceImage,
+      cccd: userData.idNumber,
+      fingerprint: userData.fingerPrint 
+    }
+
+    try {
+      await axios.put(url_update_user, param, {
+        headers: {
+          "Content-Type": "application/json",
+        }
+      }); 
+
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || "Lỗi không xác định khi cập nhật thông tin người dùng");
+    }
   },
   
   deleteUser: async (id: string): Promise<void> => {
-    const token = getToken();
-    const url = `${THINGSBOARD_HOST}/api/user/${id}`;
+    const url = `${BE_HOST}/api/User/userId?userId=${id}`;
 
     try {
       await axios.delete(url, {
         headers: {
           "Content-Type": "application/json",
-          "X-Authorization": `Bearer ${token}`,
         }
       });
     } catch (error: any) {
@@ -179,14 +217,12 @@ export const userService = {
   },
 
   uploadUsers: async (formData: FormData): Promise<void> => {
-    const token = getToken();
     const url = `${THINGSBOARD_HOST}/api/user/upload`;
 
     try {
       await axios.post(url, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
-          "X-Authorization": `Bearer ${token}`,
         }
       });
     } catch (error: any) {
@@ -197,10 +233,6 @@ export const userService = {
 
 // Device service
 export const deviceService = {
-  // getDevices: async (): Promise<Device[]> => {
-  //   await delay(300);
-  //   return [...devices];
-  // },
 
   getDevices: async (pageSize: number = 10, page: number = 0) => {
     const token = getToken();
@@ -218,7 +250,7 @@ export const deviceService = {
       const deviceList = response.data.data;
       const devicesWithTelemetry: Device[] = await Promise.all(
         deviceList.map(async (device: any) => {
-          const telemetryUrl = `${THINGSBOARD_HOST}/api/plugins/telemetry/DEVICE/${device.id.id}/values/timeseries?keys=location`;
+          const telemetryUrl = `${THINGSBOARD_HOST}/api/plugins/telemetry/DEVICE/${device.id.id}/values/timeseries?keys=status`;
           try {
             const telemetryRes = await axios.get(telemetryUrl, {
               headers: {
@@ -226,15 +258,17 @@ export const deviceService = {
                 "X-Authorization": `Bearer ${token}`,
               }
             });
+            const data = JSON.parse(telemetryRes.data.status[0]?.value);
+
             return {
               id: device.id.id,
               name: device.name,
               type: device.type,
-              location: telemetryRes.data.location?.[0]?.value || '',
-              status: device.status === false || !device.status ? 'Inactive' : 'Active',
-              camStatus: device.camStatus === false || !device.camStatus ? 'Inactive' : 'Active',
-              rfidStatus: device.rfidStatus === false || !device.rfidStatus ? 'Inactive' : 'Active',
-              fingerPrintStatus: device.fingerPrintStatus === false || !device.fingerPrintStatus ? 'Inactive' : 'Active'
+              location: device.label || "unknown",
+              status: !data || !data.door_status || data.door_status === 'close' ? 'close' : 'open',
+              camStatus: !data || !data.cam_status || data.cam_status === 'inactive'  ? 'inactive' : 'active',
+              rfidStatus: !data || !data.rfid_status || data.rfid_status === 'inactive'  ? 'inactive' : 'active',
+              fingerPrintStatus: !data || !data.finger_printer_status || data.finger_printer_status === 'inactive' ? 'inactive' : 'active'
             };
           } catch (error) {
             console.error('Error fetching device telemetry:', error);
@@ -242,11 +276,11 @@ export const deviceService = {
               id: device.id.id,
               name: device.name,
               type: device.type,
-              location: '',
-              status: device.status === false || !device.status ? 'Inactive' : 'Active',
-              camStatus: device.camStatus === false || !device.camStatus ? 'Inactive' : 'Active',
-              rfidStatus: device.rfidStatus === false || !device.rfidStatus ? 'Inactive' : 'Active',
-              fingerPrintStatus: device.fingerPrintStatus === false || !device.fingerPrintStatus ? 'Inactive' : 'Active'
+              location: 'unknown',
+              status:  'unknown',
+              camStatus: 'unknown',
+              rfidStatus:  'unknown',
+              fingerPrintStatus: 'unknown'
             };
           }
         })
@@ -279,12 +313,18 @@ export const deviceService = {
     }
   },
   
-  createDevice: async (deviceData: Omit<Device, 'id'>): Promise<Device> => {
+  createDevice: async (deviceData: Omit<Partial<Device>, 'id'>): Promise<Partial<Device>> => {
     const token = getToken();
     const url = `${THINGSBOARD_HOST}/api/device`;
 
+    const param = {
+      name: deviceData.name,
+      type: deviceData.type,
+      label: deviceData.location
+    }
+
     try {
-      const response = await axios.post(url, deviceData, {
+      const response = await axios.post(url, param, {
         headers: {
           "Content-Type": "application/json",
           "X-Authorization": `Bearer ${token}`,
@@ -302,15 +342,39 @@ export const deviceService = {
   
   updateDevice: async (id: string, deviceData: Partial<Device>): Promise<void> => {
     const token = getToken();
-    const url = `${THINGSBOARD_HOST}/api/device/${id}`;
+    const url_credential = `${THINGSBOARD_HOST}/api/device/${id}/credentials`;
 
     try {
-      await axios.post(url, deviceData, {
+      const response_access_token = await axios.get(url_credential, {
         headers: {
           "Content-Type": "application/json",
           "X-Authorization": `Bearer ${token}`,
-        }
+        },
       });
+
+      let access_token = response_access_token.data.credentialsId;
+      const url_update = `${THINGSBOARD_HOST}/api/device?accessToken=${access_token}`;
+
+      let data = {
+        id: {
+          id: id,
+          entityType: "DEVICE"
+        },
+        name: deviceData.name,
+        type: deviceData.type,
+        label: deviceData.location || "Unknown",
+        status: "Active",  
+
+      }
+
+      await axios.post(url_update, data, {
+        headers: {
+          "Content-Type": "application/json",
+          "X-Authorization": `Bearer ${token}`,
+        },
+        
+      });
+
     } catch (error: any) {
       throw new Error(error.response?.data?.message || "Lỗi không xác định khi cập nhật thiết bị");
     }
@@ -352,42 +416,48 @@ export const deviceService = {
 // Permission service
 export const permissionService = {
   getPermissions: async (): Promise<Permission[]> => {
-    await delay(300);
-    return [...permissions];
-    // const token = getToken("token");
-  
-    // if (!token) {
-    //   throw new Error("Chưa đăng nhập hoặc token không tồn tại");
-    // }
-  
-    // const url = `${THINGSBOARD_HOST}/api/permissions`; // URL API lấy danh sách quyền
+    const url_users = `${BE_HOST}/api/Permission/All`; // API lấy danh sách người dùng
     
-    // try {
-    //   const response = await axios.get(url, {
-    //     headers: {
-    //       "Content-Type": "application/json",
-    //       "X-Authorization": `Bearer ${token}`,
-    //     },
-    //   });
-  
-    //   return response.data || []; // Trả về dữ liệu từ API
-    // } catch (error: any) {
-    //   throw new Error(error.response?.data?.message || "Lỗi không xác định khi lấy danh sách quyền");
-    // }
+    try {
+      const response = await axios.get(url_users, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      return response.data.map((permissionInfo: any) => ({
+        id: permissionInfo.id,
+        userIds: permissionInfo.userId,
+        deviceIds: permissionInfo.deviceId,
+        startTime: permissionInfo.time_Start,
+        endTime: permissionInfo.time_End,
+        createdAt: permissionInfo.createdAt
+      }));
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || "Lỗi không xác định khi lấy danh sách quyền");
+    }
   },
   
-  createPermission: async (userIds: string[], deviceIds: string[], startTime: string, endTime: string): Promise<Permission> => {
-    await delay(300);
-    const newPermission: Permission = {
-      id: uuidv4(),
-      userIds,
-      deviceIds,
-      startTime,
-      endTime,
-      createdAt: new Date().toISOString(),
-    };
-    permissions.push(newPermission);
-    return newPermission;
+  createPermission: async (userIds: string[], deviceIds: string[], startTime: string, endTime: string): Promise<void> => {
+    const url = `${BE_HOST}/api/Permission`;
+
+    const param = {
+      userIds: userIds,
+      deviceIds: deviceIds,
+      time_Start: startTime,
+      time_End: endTime
+    }
+
+    try {
+      await axios.post(url, param, {
+        headers: {
+          "Content-Type": "application/json",
+        }
+      });
+
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || "Lỗi không xác định khi tạo phân quyền");
+    }
   
   },
 
@@ -412,31 +482,42 @@ export const permissionService = {
   },
 
   deletePermission: async (id: string): Promise<void> => {
-    await delay(300);
-    const index = permissions.findIndex(permission => permission.id === id);
-    if (index === -1) {
-      throw new Error('Permission not found');
+  
+    const url = `${BE_HOST}/api/Permission/permissionId`; // URL API xóa quyền
+  
+    try {
+      await axios.delete(url, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || "Lỗi không xác định khi xóa quyền");
     }
-    permissions.splice(index, 1);
-  //   const token = getToken("token");
-  
-  //   const url = `${THINGSBOARD_HOST}/api/permissions/${id}`; // URL API xóa quyền
-  
-  //   try {
-  //     await axios.delete(url, {
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //         "X-Authorization": `Bearer ${token}`,
-  //       },
-  //     });
-  //   } catch (error: any) {
-  //     throw new Error(error.response?.data?.message || "Lỗi không xác định khi xóa quyền");
-  //   }
   },
 }; 
 
 export const historyService = {
-  getHistories: async (data: {
+  getHistories: async(): Promise<HistoryEntry[]> => {
+    const url_getHistories = `${BE_HOST}/api/History/All`;
+
+    try {
+      const res = await axios.get(url_getHistories, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      // Giả sử trả về mảng [{ histId, userId }]
+      console.log(res.data);
+      return res.data;
+    } catch (error) {
+      console.warn(`Không lấy được lịch sử cho user`, error);
+      return [];
+    }
+
+  },
+  getHistorieByListID: async (data: {
     selectedUsers: string[],
     selectedDevices: string[],
     startTime: Date | null,
@@ -454,7 +535,7 @@ export const historyService = {
     // Step 1: Gọi API user-history → [{ histId, userId }]
     const userHistories = await Promise.all(
       selectedUsers.map(async (userId) => {
-        const url = `${THINGSBOARD_HOST}/api/custom/user-history?userId=${userId}&startTs=${startTs}&endTs=${endTs}`;
+        const url = `${BE_HOST}/api/History/All`;
 
         try {
           const res = await axios.get(url, {
@@ -464,6 +545,7 @@ export const historyService = {
           });
 
           // Giả sử trả về mảng [{ histId, userId }]
+          console.log(res.data);
           return res.data;
         } catch (error) {
           console.warn(`Không lấy được lịch sử cho user ${userId}`, error);
